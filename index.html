@@ -8,29 +8,60 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f5ff;overflow:hidden;height:100vh;}
-    #particleCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
-    
-    /* 登录 */
-    .login-container{display:flex;justify-content:center;align-items:center;height:100vh;position:relative;z-index:1;}
-    .login-bg{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 30%,#bfdbfe 60%,#93c5fd 100%);z-index:0;}
-    .login-box{position:relative;z-index:1;background:rgba(255,255,255,0.55);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:28px;padding:55px 50px;width:430px;text-align:center;border:1px solid rgba(255,255,255,0.7);box-shadow:0 25px 60px rgba(0,50,120,0.12),0 0 0 1px rgba(59,130,246,0.1) inset;transition:transform 0.1s ease-out;}
+
+    /* 粒子画布 - 最上层 */
+    #particleCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;pointer-events:none;}
+
+    /* 登录背景 */
+    .login-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 30%,#bfdbfe 60%,#93c5fd 100%);}
+
+    /* 登录容器 */
+    .login-container{display:flex;justify-content:center;align-items:center;height:100vh;position:relative;z-index:2;}
+    .login-box{
+      position:relative;z-index:3;
+      background:rgba(255,255,255,0.45);
+      backdrop-filter:blur(28px);
+      -webkit-backdrop-filter:blur(28px);
+      border-radius:28px;
+      padding:55px 50px;
+      width:430px;
+      text-align:center;
+      border:1px solid rgba(255,255,255,0.6);
+      box-shadow:0 25px 60px rgba(0,50,120,0.10),0 0 0 1px rgba(59,130,246,0.08) inset;
+      transition:transform 0.08s ease-out;
+    }
     .login-box h2{font-size:30px;color:#0f172a;font-weight:700;margin-bottom:6px;letter-spacing:0.5px;}
-    .login-box .subtitle{font-size:14px;color:#64748b;margin-bottom:36px;}
+    .login-box .subtitle{font-size:13px;color:#64748b;margin-bottom:36px;letter-spacing:1px;}
     .input-group{margin-bottom:22px;text-align:left;}
     .input-group label{display:block;font-size:13px;color:#334155;margin-bottom:6px;font-weight:600;}
-    .login-box input{width:100%;padding:15px 16px;background:rgba(255,255,255,0.85);border:1px solid rgba(59,130,246,0.2);border-radius:14px;color:#1e293b;font-size:15px;outline:none;transition:0.25s;}
-    .login-box input:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 4px rgba(59,130,246,0.1);}
-    .login-box button{width:100%;padding:15px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px;box-shadow:0 8px 20px rgba(37,99,235,0.3);transition:0.2s;}
+    .login-box input{
+      width:100%;padding:15px 16px;
+      background:rgba(255,255,255,0.75);
+      border:1px solid rgba(59,130,246,0.2);
+      border-radius:14px;color:#1e293b;font-size:15px;
+      outline:none;transition:0.25s;
+    }
+    .login-box input:focus{
+      border-color:#3b82f6;background:#fff;
+      box-shadow:0 0 0 4px rgba(59,130,246,0.1);
+    }
+    .login-box button{
+      width:100%;padding:15px;
+      background:linear-gradient(135deg,#3b82f6,#2563eb);
+      border:none;border-radius:14px;color:#fff;
+      font-size:16px;font-weight:600;cursor:pointer;
+      margin-top:10px;box-shadow:0 8px 20px rgba(37,99,235,0.3);
+      transition:0.2s;
+    }
     .login-box button:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(37,99,235,0.4);}
     .login-error{color:#ef4444;margin-top:16px;font-size:14px;min-height:20px;}
 
     /* 后台框架 */
     .app-container{display:none;height:100vh;position:relative;z-index:1;background:linear-gradient(180deg,#f0f5ff 0%,#f8fafc 100%);}
     .sidebar{width:230px;height:100vh;background:#ffffff;position:fixed;left:0;top:0;display:flex;flex-direction:column;padding:20px 0;border-right:1px solid #e2e8f0;box-shadow:2px 0 20px rgba(0,0,0,0.03);z-index:10;}
-    .sidebar-logo{font-size:17px;font-weight:700;color:#1e293b;padding:6px 20px 28px;letter-spacing:0.5px;display:flex;align-items:center;gap:8px;}
+    .sidebar-logo{font-size:17px;font-weight:700;color:#1e293b;padding:6px 20px 28px;display:flex;align-items:center;gap:8px;}
     .sidebar-logo span{width:8px;height:8px;background:#3b82f6;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(59,130,246,0.5);}
-    .nav-group{margin-bottom:6px;}
-    .nav-item{padding:12px 20px;color:#475569;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:space-between;transition:0.15s;font-weight:500;border-radius:0;margin:1px 8px;border-radius:10px;}
+    .nav-item{padding:12px 20px;color:#475569;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:space-between;transition:0.15s;font-weight:500;margin:1px 8px;border-radius:10px;}
     .nav-item:hover{background:#f1f5f9;color:#1e293b;}
     .nav-item.active{background:#eff6ff;color:#2563eb;font-weight:600;}
     .nav-item .left{display:flex;align-items:center;gap:10px;}
@@ -69,7 +100,6 @@
     .card h3{font-size:17px;margin-bottom:20px;color:#0f172a;font-weight:600;display:flex;align-items:center;gap:8px;}
     .card h3::before{content:'';display:inline-block;width:4px;height:18px;background:#3b82f6;border-radius:2px;}
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;}
-    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 
     table{width:100%;border-collapse:collapse;}
     th{text-align:left;padding:13px 12px;color:#64748b;font-weight:600;border-bottom:2px solid #f1f5f9;font-size:13px;}
@@ -114,19 +144,14 @@
     .btn-secondary:hover{background:#e2e8f0;}
 
     .json-output{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:12px;font-family:monospace;font-size:13px;white-space:pre-wrap;max-height:500px;overflow-y:auto;margin-top:16px;}
-
-    @media(max-width:768px){
-      .sidebar{width:60px;}
-      .sidebar .nav-item .left span:last-child,.sidebar-logo,.sub-nav{display:none;}
-      .main-content{margin-left:60px;}
-      .kpi-row{grid-template-columns:1fr 1fr;}
-      .grid-2{grid-template-columns:1fr;}
-    }
   </style>
 </head>
 <body>
+  <!-- 粒子画布 - 在最顶层 -->
   <canvas id="particleCanvas"></canvas>
-  <div class="login-bg" id="loginBg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;"></div>
+
+  <!-- 登录背景 -->
+  <div class="login-bg" id="loginBg"></div>
 
   <!-- 登录 -->
   <div id="loginPage" class="login-container">
@@ -204,180 +229,318 @@
   </div>
 
   <script>
-    // ===== 鼠标交互粒子 =====
+    // ===== 粒子系统（鼠标交互，跟随鼠标）=====
     (function(){
-      const c=document.getElementById('particleCanvas'),ctx=c.getContext('2d');
-      let p=[],w,h,mx=0,my=0;
-      function r(){w=c.width=innerWidth;h=c.height=innerHeight}
-      addEventListener('resize',r);r();
-      addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY});
-      for(let i=0;i<100;i++)p.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*4+2,dx:(Math.random()-.5)*.6,dy:(Math.random()-.5)*.6,o:Math.random()*.4+.15});
-      function d(){
-        ctx.clearRect(0,0,w,h);
-        p.forEach(a=>{
-          let dx=mx-a.x,dy=my-a.y,dist=Math.hypot(dx,dy);
-          if(dist<180){a.x+=dx*0.003;a.y+=dy*0.003}
-          else{a.x+=a.dx;a.y+=a.dy}
-          if(a.x<0||a.x>w)a.dx*=-1;if(a.y<0||a.y>h)a.dy*=-1;
-          ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);
-          ctx.fillStyle=`rgba(59,130,246,${a.o})`;ctx.fill();
-          p.forEach(b=>{const dt=Math.hypot(a.x-b.x,a.y-b.y);if(dt<130){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(59,130,246,${.06*(1-dt/130)})`;ctx.lineWidth=.5;ctx.stroke()}})
-        });
-        requestAnimationFrame(d);
+      const canvas = document.getElementById('particleCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let w, h;
+      let mouseX = -1000, mouseY = -1000; // 初始在屏幕外
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
       }
-      d();
+      window.addEventListener('resize', resize);
+      resize();
+
+      // 跟踪鼠标位置
+      document.addEventListener('mousemove', function(e) {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      // 创建粒子：更大、更多
+      const COUNT = 120;
+      for (let i = 0; i < COUNT; i++) {
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 5 + 2.5,
+          baseX: Math.random() * w,
+          baseY: Math.random() * h,
+          dx: (Math.random() - 0.5) * 0.4,
+          dy: (Math.random() - 0.5) * 0.4,
+          opacity: Math.random() * 0.5 + 0.2
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+
+        particles.forEach(p => {
+          // 计算与鼠标的距离
+          const distToMouse = Math.hypot(p.x - mouseX, p.y - mouseY);
+          
+          // 如果鼠标在附近（200px内），粒子向鼠标靠拢
+          if (distToMouse < 200) {
+            const angle = Math.atan2(mouseY - p.y, mouseX - p.x);
+            const force = (200 - distToMouse) / 200 * 0.03; // 越近力越大
+            p.x += Math.cos(angle) * force * 3;
+            p.y += Math.sin(angle) * force * 3;
+          } else {
+            // 鼠标远离时，粒子自由漂浮
+            p.x += p.dx;
+            p.y += p.dy;
+          }
+
+          // 边界反弹
+          if (p.x < 0 || p.x > w) p.dx *= -1;
+          if (p.y < 0 || p.y > h) p.dy *= -1;
+          p.x = Math.max(0, Math.min(w, p.x));
+          p.y = Math.max(0, Math.min(h, p.y));
+
+          // 绘制粒子
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(59, 130, 246, ${p.opacity})`;
+          ctx.fill();
+
+          // 粒子间连线
+          particles.forEach(p2 => {
+            const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+            if (dist < 140) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = `rgba(59, 130, 246, ${0.07 * (1 - dist / 140)})`;
+              ctx.lineWidth = 0.6;
+              ctx.stroke();
+            }
+          });
+        });
+
+        requestAnimationFrame(draw);
+      }
+      draw();
     })();
 
-    // 登录框微动
-    document.addEventListener('mousemove',e=>{
-      const box=document.getElementById('loginBox');if(!box||box.style.display==='none')return;
-      const cx=innerWidth/2,cy=innerHeight/2,dx=(e.clientX-cx)/cx*3,dy=(e.clientY-cy)/cy*3;
-      box.style.transform=`translate(${dx}px,${dy}px)`;
+    // 登录卡片微动
+    document.addEventListener('mousemove', function(e) {
+      const box = document.getElementById('loginBox');
+      if (!box || box.offsetParent === null) return; // 隐藏时不计算
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const dx = (e.clientX - cx) / cx * 4;
+      const dy = (e.clientY - cy) / cy * 4;
+      box.style.transform = `translate(${dx}px, ${dy}px)`;
     });
 
-    let appData=null,currentUser=null;
-    const PLATFORMS=['视频号','快手','抖音','B站','微博'];
-    fetch('data.json').then(r=>r.json()).then(d=>{appData=d});
+    // ===== 业务逻辑 =====
+    let appData = null, currentUser = null;
+    const PLATFORMS = ['视频号', '快手', '抖音', 'B站', '微博'];
+    fetch('data.json').then(r => r.json()).then(d => { appData = d; });
 
-    function login(){
-      const u=document.getElementById('usernameInput').value.trim();
-      const pw=document.getElementById('passwordInput').value.trim();
-      const err=document.getElementById('loginError');
-      if(!appData){err.textContent='数据加载中...';return}
-      const user=(appData.users||[]).find(x=>x.username===u&&x.password===pw);
-      if(user){
-        currentUser=user;
-        document.getElementById('loginPage').style.display='none';
-        document.getElementById('loginBg').style.display='none';
-        document.getElementById('particleCanvas').style.display='none';
-        document.getElementById('appContainer').style.display='block';
-        document.getElementById('userAvatar').textContent=user.username[0].toUpperCase();
+    function login() {
+      const u = document.getElementById('usernameInput').value.trim();
+      const pw = document.getElementById('passwordInput').value.trim();
+      const err = document.getElementById('loginError');
+      if (!appData) { err.textContent = '数据加载中...'; return; }
+      const user = (appData.users || []).find(x => x.username === u && x.password === pw);
+      if (user) {
+        currentUser = user;
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('loginBg').style.display = 'none';
+        document.getElementById('particleCanvas').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        document.getElementById('userAvatar').textContent = user.username[0].toUpperCase();
         switchPage('dashboard');
-      }else err.textContent='账号或密码错误';
-    }
-    function logout(){
-      document.getElementById('appContainer').style.display='none';
-      document.getElementById('loginPage').style.display='flex';
-      document.getElementById('loginBg').style.display='block';
-      document.getElementById('particleCanvas').style.display='block';
-      document.getElementById('usernameInput').value='';
-      document.getElementById('passwordInput').value='';
+      } else {
+        err.textContent = '账号或密码错误';
+      }
     }
 
-    function toggleUserDropdown(){
+    function logout() {
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginPage').style.display = 'flex';
+      document.getElementById('loginBg').style.display = 'block';
+      document.getElementById('particleCanvas').style.display = 'block';
+      document.getElementById('usernameInput').value = '';
+      document.getElementById('passwordInput').value = '';
+    }
+
+    function toggleUserDropdown() {
       document.getElementById('userDropdown').classList.toggle('show');
     }
-    document.addEventListener('click',e=>{
-      if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-dropdown'))
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.user-avatar') && !e.target.closest('.user-dropdown')) {
         document.getElementById('userDropdown').classList.remove('show');
+      }
     });
 
-    function showProfile(){
+    function showProfile() {
       document.getElementById('userDropdown').classList.remove('show');
-      alert(`当前用户：${currentUser?.username||'未知'}\n角色：运营管理`);
+      alert('当前用户：' + (currentUser?.username || '未知') + '\n角色：运营管理');
     }
-    function showChangePassword(){
+
+    function showChangePassword() {
       document.getElementById('userDropdown').classList.remove('show');
       document.getElementById('passwordModal').classList.add('show');
-      document.getElementById('oldPassword').value='';
-      document.getElementById('newPassword').value='';
-      document.getElementById('confirmPassword').value='';
-      document.getElementById('passwordError').textContent='';
+      document.getElementById('oldPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+      document.getElementById('passwordError').textContent = '';
     }
-    function closePasswordModal(){
+
+    function closePasswordModal() {
       document.getElementById('passwordModal').classList.remove('show');
     }
-    function changePassword(){
-      const old=document.getElementById('oldPassword').value.trim();
-      const nw=document.getElementById('newPassword').value.trim();
-      const cf=document.getElementById('confirmPassword').value.trim();
-      const err=document.getElementById('passwordError');
-      if(old!==currentUser.password){err.textContent='当前密码错误';return}
-      if(nw.length<3){err.textContent='新密码至少3位';return}
-      if(nw!==cf){err.textContent='两次密码不一致';return}
-      const user=appData.users.find(x=>x.username===currentUser.username);
-      if(user)user.password=nw;
-      currentUser.password=nw;
-      alert('密码修改成功！请复制下方JSON到GitHub更新：\n\n'+JSON.stringify(appData.users,null,2));
+
+    function changePassword() {
+      const old = document.getElementById('oldPassword').value.trim();
+      const nw = document.getElementById('newPassword').value.trim();
+      const cf = document.getElementById('confirmPassword').value.trim();
+      const err = document.getElementById('passwordError');
+      if (old !== currentUser.password) { err.textContent = '当前密码错误'; return; }
+      if (nw.length < 3) { err.textContent = '新密码至少3位'; return; }
+      if (nw !== cf) { err.textContent = '两次密码不一致'; return; }
+      const user = appData.users.find(x => x.username === currentUser.username);
+      if (user) user.password = nw;
+      currentUser.password = nw;
+      alert('密码修改成功！请复制下方JSON到GitHub更新data.json：\n\n' + JSON.stringify(appData.users, null, 2));
       closePasswordModal();
     }
 
-    function toggleNav(el,group){
-      const sub=document.getElementById('sub-'+group);
-      const arrow=el.querySelector('.arrow');
-      if(sub){
+    function toggleNav(el, group) {
+      const sub = document.getElementById('sub-' + group);
+      const arrow = el.querySelector('.arrow');
+      if (sub) {
         sub.classList.toggle('show');
-        if(arrow)arrow.classList.toggle('open');
-      }else{
+        if (arrow) arrow.classList.toggle('open');
+      } else {
         switchPage(el.dataset.page);
       }
     }
 
-    function switchPage(page){
-      document.querySelectorAll('.nav-item,.sub-item').forEach(n=>n.classList.remove('active'));
-      document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
-      const mc=document.getElementById('pageContent');
-      if(page==='dashboard')renderDashboard(mc);
-      else if(page==='content-plan')renderContentPlan(mc);
-      else if(page==='content-list')renderContentList(mc);
-      else if(page==='content-add')renderContentAdd(mc);
-      else if(page==='schedule-chuangyi')renderSchedule(mc,'创艺装饰');
-      else if(page==='schedule-xikexi')renderSchedule(mc,'喜客喜装饰');
-      else if(page==='analysis-chuangyi')renderAnalysis(mc,'创艺装饰');
-      else if(page==='analysis-xikexi')renderAnalysis(mc,'喜客喜装饰');
-      else if(page.startsWith('maintain-')){const p=page.replace('maintain-','');renderMaintain(mc,PLATFORMS.find(x=>{if(x==='视频号')return p==='wechat';if(x==='快手')return p==='kuaishou';if(x==='抖音')return p==='douyin';if(x==='B站')return p==='bilibili';if(x==='微博')return p==='weibo';}));}
+    function switchPage(page) {
+      document.querySelectorAll('.nav-item,.sub-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('[data-page="' + page + '"]')?.classList.add('active');
+      const mc = document.getElementById('pageContent');
+      if (page === 'dashboard') renderDashboard(mc);
+      else if (page === 'content-plan') renderContentPlan(mc);
+      else if (page === 'content-list') renderContentList(mc);
+      else if (page === 'content-add') renderContentAdd(mc);
+      else if (page === 'schedule-chuangyi') renderSchedule(mc, '创艺装饰');
+      else if (page === 'schedule-xikexi') renderSchedule(mc, '喜客喜装饰');
+      else if (page === 'analysis-chuangyi') renderAnalysis(mc, '创艺装饰');
+      else if (page === 'analysis-xikexi') renderAnalysis(mc, '喜客喜装饰');
+      else if (page.startsWith('maintain-')) {
+        const p = page.replace('maintain-', '');
+        const platform = PLATFORMS.find(function(x) {
+          if (x === '视频号') return p === 'wechat';
+          if (x === '快手') return p === 'kuaishou';
+          if (x === '抖音') return p === 'douyin';
+          if (x === 'B站') return p === 'bilibili';
+          if (x === '微博') return p === 'weibo';
+          return false;
+        });
+        renderMaintain(mc, platform);
+      }
     }
 
-    function formatNum(n){if(n>=10000)return (n/10000).toFixed(1)+'w';if(n>=1000)return (n/1000).toFixed(1)+'k';return n.toString();}
-    function getBrandData(brand){return (appData?.videos||[]).filter(v=>v.brand===brand)}
-    function getPublished(videos){return videos.filter(v=>v.status==='已发布')}
-    function sumPlatform(videos,key){return videos.reduce((s,v)=>{PLATFORMS.forEach(p=>{s+=(v.platforms?.[p]?.[key]||0)});return s},0)}
-    function sumPlatformMonth(videos,key,month='07'){return videos.filter(v=>v.planned_date?.startsWith('2026-'+month)).reduce((s,v)=>{PLATFORMS.forEach(p=>{s+=(v.platforms?.[p]?.[key]||0)});return s},0)}
-    function platformTotal(videos,platform,key){return videos.reduce((s,v)=>s+(v.platforms?.[platform]?.[key]||0),0)}
+    function formatNum(n) {
+      if (n >= 10000) return (n / 10000).toFixed(1) + 'w';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+      return n.toString();
+    }
+
+    function getBrandData(brand) {
+      return (appData?.videos || []).filter(function(v) { return v.brand === brand; });
+    }
+
+    function getPublished(videos) {
+      return videos.filter(function(v) { return v.status === '已发布'; });
+    }
+
+    function sumPlatform(videos, key) {
+      let sum = 0;
+      videos.forEach(function(v) {
+        PLATFORMS.forEach(function(p) {
+          sum += (v.platforms?.[p]?.[key] || 0);
+        });
+      });
+      return sum;
+    }
+
+    function sumPlatformMonth(videos, key, month) {
+      month = month || '07';
+      return videos.filter(function(v) {
+        return v.planned_date?.startsWith('2026-' + month);
+      }).reduce(function(s, v) {
+        PLATFORMS.forEach(function(p) {
+          s += (v.platforms?.[p]?.[key] || 0);
+        });
+        return s;
+      }, 0);
+    }
+
+    function platformTotal(videos, platform, key) {
+      return videos.reduce(function(s, v) {
+        return s + (v.platforms?.[platform]?.[key] || 0);
+      }, 0);
+    }
 
     // ===== 数据大盘 =====
-    function renderDashboard(mc){
-      if(!appData)return;
-      const cy=getBrandData('创艺装饰'),xk=getBrandData('喜客喜装饰');
-      const cyPub=getPublished(cy),xkPub=getPublished(xk);
-      const cyViews=sumPlatform(cyPub,'views'),xkViews=sumPlatform(xkPub,'views');
-      const cyMonthViews=sumPlatformMonth(cyPub,'views'),xkMonthViews=sumPlatformMonth(xkPub,'views');
-      const totalPub=cyPub.length+xkPub.length,totalPlan=cy.length+xk.length;
-      const platData=PLATFORMS.map(p=>({name:p,views:platformTotal(cyPub.concat(xkPub),p,'views')}));
-      const weeks=appData.weekly_tasks||[];
+    function renderDashboard(mc) {
+      if (!appData) return;
+      var cy = getBrandData('创艺装饰');
+      var xk = getBrandData('喜客喜装饰');
+      var cyPub = getPublished(cy);
+      var xkPub = getPublished(xk);
+      var cyViews = sumPlatform(cyPub, 'views');
+      var xkViews = sumPlatform(xkPub, 'views');
+      var cyMonthViews = sumPlatformMonth(cyPub, 'views');
+      var xkMonthViews = sumPlatformMonth(xkPub, 'views');
+      var totalPub = cyPub.length + xkPub.length;
+      var totalPlan = cy.length + xk.length;
+      var platData = PLATFORMS.map(function(p) {
+        return { name: p, views: platformTotal(cyPub.concat(xkPub), p, 'views') };
+      });
+      var weeks = appData.weekly_tasks || [];
+      var maxView = Math.max.apply(null, platData.map(function(x) { return x.views; })) || 1;
 
-      mc.innerHTML=`
+      mc.innerHTML = `
         <div class="kpi-row">
           <div class="kpi-card brand-card"><div class="label">🏠 创艺装饰 · 累计总播放</div><div class="value">${formatNum(cyViews)}</div><div class="sub">本月新增 ${formatNum(cyMonthViews)}</div></div>
           <div class="kpi-card brand-card orange"><div class="label">🏡 喜客喜装饰 · 累计总播放</div><div class="value">${formatNum(xkViews)}</div><div class="sub">本月新增 ${formatNum(xkMonthViews)}</div></div>
           <div class="kpi-card"><div class="label">📹 本月已发布视频</div><div class="value">${totalPub}<span style="font-size:16px;color:#64748b;"> / ${totalPlan}</span></div><div class="sub">计划总数 ${totalPlan} 条</div></div>
-          <div class="kpi-card"><div class="label">👁️ 全平台总播放</div><div class="value">${formatNum(cyViews+xkViews)}</div><div class="sub">5个平台合计</div></div>
+          <div class="kpi-card"><div class="label">👁️ 全平台总播放</div><div class="value">${formatNum(cyViews + xkViews)}</div><div class="sub">5个平台合计</div></div>
         </div>
         <div class="grid-2">
-          <div class="card"><h3>各平台播放量对比</h3>${platData.map(p=>`<div class="platform-bar"><span class="name">${p.name}</span><div class="bar"><div class="fill" style="width:${Math.round(p.views/Math.max(...platData.map(x=>x.views),1)*100)}%"></div></div><span style="font-size:13px;color:#334155;min-width:60px;text-align:right;">${formatNum(p.views)}</span></div>`).join('')}</div>
+          <div class="card"><h3>各平台播放量对比</h3>${platData.map(function(p) { return '<div class="platform-bar"><span class="name">' + p.name + '</span><div class="bar"><div class="fill" style="width:' + Math.round(p.views / maxView * 100) + '%"></div></div><span style="font-size:13px;color:#334155;min-width:60px;text-align:right;">' + formatNum(p.views) + '</span></div>'; }).join('')}</div>
           <div class="card"><h3>每周执行汇总</h3><div id="weekBarChart" class="chart-box"></div></div>
         </div>
       `;
-      setTimeout(()=>{
-        const bc=document.getElementById('weekBarChart');if(bc){const ch=echarts.init(bc);ch.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:weeks.map(w=>w.week),axisLabel:{color:'#64748b',rotate:15,fontSize:11}},yAxis:{type:'value',axisLabel:{color:'#64748b'}},series:[{name:'出片',type:'bar',data:weeks.map(w=>w.output),color:'#3b82f6',barWidth:'18',itemStyle:{borderRadius:[6,6,0,0]}},{name:'拍摄',type:'bar',data:weeks.map(w=>w.shoot),color:'#f59e0b',barWidth:'18',itemStyle:{borderRadius:[6,6,0,0]}}]})}
-      },100);
+      setTimeout(function() {
+        var bc = document.getElementById('weekBarChart');
+        if (bc) {
+          var ch = echarts.init(bc);
+          ch.setOption({
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: weeks.map(function(w) { return w.week; }), axisLabel: { color: '#64748b', rotate: 15, fontSize: 11 } },
+            yAxis: { type: 'value', axisLabel: { color: '#64748b' } },
+            series: [
+              { name: '出片', type: 'bar', data: weeks.map(function(w) { return w.output; }), color: '#3b82f6', barWidth: '18', itemStyle: { borderRadius: [6, 6, 0, 0] } },
+              { name: '拍摄', type: 'bar', data: weeks.map(function(w) { return w.shoot; }), color: '#f59e0b', barWidth: '18', itemStyle: { borderRadius: [6, 6, 0, 0] } }
+            ]
+          });
+        }
+      }, 100);
     }
 
-    // ===== 内容管理 - 发布计划 =====
-    function renderContentPlan(mc){
-      const videos=appData?.videos||[];
-      mc.innerHTML=`<div class="card"><h3>视频发布计划</h3><table><tr><th>品牌</th><th>视频标题</th><th>类型</th><th>计划日期</th><th>时间</th><th>状态</th></tr>${videos.map(v=>`<tr><td>${v.brand}</td><td>${v.title}</td><td>${v.type}</td><td>${v.planned_date}</td><td>${v.planned_time}</td><td><span class="status-tag ${v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending'}">${v.status}</span></td></tr>`).join('')}</table></div>`;
+    // ===== 内容管理 =====
+    function renderContentPlan(mc) {
+      var videos = appData?.videos || [];
+      mc.innerHTML = '<div class="card"><h3>视频发布计划</h3><table><tr><th>品牌</th><th>视频标题</th><th>类型</th><th>计划日期</th><th>时间</th><th>状态</th></tr>' + videos.map(function(v) { return '<tr><td>' + v.brand + '</td><td>' + v.title + '</td><td>' + v.type + '</td><td>' + v.planned_date + '</td><td>' + v.planned_time + '</td><td><span class="status-tag ' + (v.status === '已发布' ? 'published' : v.status === '剪辑中' ? 'editing' : v.status === '拍摄中' ? 'shooting' : 'pending') + '">' + v.status + '</span></td></tr>'; }).join('') + '</table></div>';
     }
 
-    // ===== 内容管理 - 视频列表 =====
-    function renderContentList(mc){
-      const videos=appData?.videos||[];
-      mc.innerHTML=`<div class="card"><h3>全部视频列表</h3><table><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th></tr>${videos.map(v=>{const tv=sumPlatform([v],'views');return`<tr><td>${v.id}</td><td>${v.brand}</td><td>${v.title}</td><td>${v.type}</td><td>${v.planned_date}</td><td><span class="status-tag ${v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending'}">${v.status}</span></td><td>${formatNum(tv)}</td></tr>`}).join('')}</table></div>`;
+    function renderContentList(mc) {
+      var videos = appData?.videos || [];
+      mc.innerHTML = '<div class="card"><h3>全部视频列表</h3><table><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th></tr>' + videos.map(function(v) { var tv = sumPlatform([v], 'views'); return '<tr><td>' + v.id + '</td><td>' + v.brand + '</td><td>' + v.title + '</td><td>' + v.type + '</td><td>' + v.planned_date + '</td><td><span class="status-tag ' + (v.status === '已发布' ? 'published' : v.status === '剪辑中' ? 'editing' : v.status === '拍摄中' ? 'shooting' : 'pending') + '">' + v.status + '</span></td><td>' + formatNum(tv) + '</td></tr>'; }).join('') + '</table></div>';
     }
 
-    // ===== 内容管理 - 添加视频 =====
-    function renderContentAdd(mc){
-      mc.innerHTML=`<div class="card"><h3>添加新视频</h3><p style="color:#64748b;margin-bottom:16px;">填写信息后生成JSON，复制到GitHub data.json的videos数组中。</p>
+    function renderContentAdd(mc) {
+      mc.innerHTML = `<div class="card"><h3>添加新视频</h3><p style="color:#64748b;margin-bottom:16px;">填写信息后生成JSON，复制到GitHub data.json的videos数组中。</p>
         <div class="form-group"><label>品牌</label><select id="addBrand" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:10px;"><option>创艺装饰</option><option>喜客喜装饰</option></select></div>
         <div class="form-group"><label>视频标题</label><input type="text" id="addTitle" placeholder="例如：完工实景案例"></div>
         <div class="form-group"><label>类型</label><input type="text" id="addType" placeholder="例如：案例展示"></div>
@@ -387,67 +550,100 @@
         <div class="json-output" id="addOutput" style="display:none;"></div>
       </div>`;
     }
-    function generateNewVideo(){
-      const brand=document.getElementById('addBrand').value;
-      const title=document.getElementById('addTitle').value;
-      const type=document.getElementById('addType').value;
-      const date=document.getElementById('addDate').value;
-      const time=document.getElementById('addTime').value;
-      const platforms={};
-      PLATFORMS.forEach(p=>{platforms[p]={published:false,publish_time:null,views:0,likes:0,comments:0,shares:0}});
-      const maxId=Math.max(...(appData?.videos||[]).map(v=>v.id),0);
-      const newVideo={id:maxId+1,brand,title,type,planned_date:date,planned_time:time,status:'待拍摄',platforms};
-      const out=document.getElementById('addOutput');
-      out.style.display='block';
-      out.textContent=JSON.stringify(newVideo,null,2)+'\n\n// 复制上面内容，添加到data.json的videos数组中';
+
+    function generateNewVideo() {
+      var brand = document.getElementById('addBrand').value;
+      var title = document.getElementById('addTitle').value;
+      var type = document.getElementById('addType').value;
+      var date = document.getElementById('addDate').value;
+      var time = document.getElementById('addTime').value;
+      var platforms = {};
+      PLATFORMS.forEach(function(p) { platforms[p] = { published: false, publish_time: null, views: 0, likes: 0, comments: 0, shares: 0 }; });
+      var maxId = Math.max.apply(null, (appData?.videos || []).map(function(v) { return v.id; })) || 0;
+      var newVideo = { id: maxId + 1, brand: brand, title: title, type: type, planned_date: date, planned_time: time, status: '待拍摄', platforms: platforms };
+      var out = document.getElementById('addOutput');
+      out.style.display = 'block';
+      out.textContent = JSON.stringify(newVideo, null, 2) + '\n\n// 复制上面内容，添加到data.json的videos数组中';
     }
 
     // ===== 排期计划 =====
-    function renderSchedule(mc,brand){
-      const weeks=appData?.weekly_tasks||[];
-      mc.innerHTML=`<div class="card"><h3>${brand} · 周计划详情</h3><div class="week-tabs" id="weekTabBar"></div><table id="weekDetailTable"><thead><tr><th>日期</th><th>动作</th><th>任务</th></tr></thead><tbody></tbody></table></div>`;
-      let idx=0;
-      window._renderWeek=function(i){
-        idx=i;
-        document.getElementById('weekTabBar').innerHTML=weeks.map((w,j)=>`<div class="week-tab ${j===i?'active':''}" onclick="window._renderWeek(${j})">${w.week.split(' ')[0]}</div>`).join('');
-        const cur=weeks[i];if(!cur)return;
-        document.querySelector('#weekDetailTable tbody').innerHTML=cur.tasks.map(t=>{let cls='';if(t.tag==='拍摄')cls='shoot';else if(t.tag==='剪辑'||t.tag==='定稿'||t.tag==='审核')cls='edit';else if(t.tag==='发布')cls='publish';else cls='other';return`<tr><td>${t.day}</td><td><span class="task-tag ${cls}">${t.action}</span></td><td>${t.detail}</td></tr>`}).join('');
+    function renderSchedule(mc, brand) {
+      var weeks = appData?.weekly_tasks || [];
+      mc.innerHTML = '<div class="card"><h3>' + brand + ' · 周计划详情</h3><div class="week-tabs" id="weekTabBar"></div><table id="weekDetailTable"><thead><tr><th>日期</th><th>动作</th><th>任务</th></tr></thead><tbody></tbody></table></div>';
+      window._renderWeek = function(i) {
+        document.getElementById('weekTabBar').innerHTML = weeks.map(function(w, j) { return '<div class="week-tab ' + (j === i ? 'active' : '') + '" onclick="window._renderWeek(' + j + ')">' + w.week.split(' ')[0] + '</div>'; }).join('');
+        var cur = weeks[i];
+        if (!cur) return;
+        document.querySelector('#weekDetailTable tbody').innerHTML = cur.tasks.map(function(t) {
+          var cls = '';
+          if (t.tag === '拍摄') cls = 'shoot';
+          else if (t.tag === '剪辑' || t.tag === '定稿' || t.tag === '审核') cls = 'edit';
+          else if (t.tag === '发布') cls = 'publish';
+          else cls = 'other';
+          return '<tr><td>' + t.day + '</td><td><span class="task-tag ' + cls + '">' + t.action + '</span></td><td>' + t.detail + '</td></tr>';
+        }).join('');
       };
       window._renderWeek(0);
     }
 
     // ===== 品牌分析 =====
-    function renderAnalysis(mc,brand){
-      const videos=getBrandData(brand);
-      const typeCount={};videos.forEach(v=>typeCount[v.type]=(typeCount[v.type]||0)+1);
-      const treeData={name:brand,children:Object.entries(typeCount).map(([type,count])=>({name:type,children:videos.filter(v=>v.type===type).map(v=>({name:v.title}))}))};
-      const platData=PLATFORMS.map(p=>({name:p,views:platformTotal(videos,p,'views')}));
-      mc.innerHTML=`
+    function renderAnalysis(mc, brand) {
+      var videos = getBrandData(brand);
+      var typeCount = {};
+      videos.forEach(function(v) { typeCount[v.type] = (typeCount[v.type] || 0) + 1; });
+      var treeData = {
+        name: brand,
+        children: Object.entries(typeCount).map(function(entry) {
+          var type = entry[0];
+          return {
+            name: type,
+            children: videos.filter(function(v) { return v.type === type; }).map(function(v) { return { name: v.title }; })
+          };
+        })
+      };
+      var platData = PLATFORMS.map(function(p) { return { name: p, views: platformTotal(videos, p, 'views') }; });
+      var maxView = Math.max.apply(null, platData.map(function(x) { return x.views; })) || 1;
+      mc.innerHTML = `
         <div class="card"><h3>${brand} · 视频类型树状图</h3><div id="treeChart" class="chart-box"></div></div>
-        <div class="card"><h3>各平台播放量</h3>${platData.map(p=>`<div class="platform-bar"><span class="name">${p.name}</span><div class="bar"><div class="fill" style="width:${Math.round(p.views/Math.max(...platData.map(x=>x.views),1)*100)}%"></div></div><span style="font-size:13px;color:#334155;min-width:60px;text-align:right;">${formatNum(p.views)}</span></div>`).join('')}</div>
+        <div class="card"><h3>各平台播放量</h3>${platData.map(function(p) { return '<div class="platform-bar"><span class="name">' + p.name + '</span><div class="bar"><div class="fill" style="width:' + Math.round(p.views / maxView * 100) + '%"></div></div><span style="font-size:13px;color:#334155;min-width:60px;text-align:right;">' + formatNum(p.views) + '</span></div>'; }).join('')}</div>
       `;
-      setTimeout(()=>{
-        const tc=document.getElementById('treeChart');if(tc){const ch=echarts.init(tc);ch.setOption({tooltip:{trigger:'item'},series:[{type:'tree',data:[treeData],top:'5%',left:'8%',bottom:'5%',right:'12%',symbolSize:7,orient:'LR',label:{position:'right',verticalAlign:'middle',align:'left',fontSize:12,color:'#334155'},leaves:{label:{position:'right',verticalAlign:'middle',align:'left'}},expandAndCollapse:true}]})}
-      },100);
+      setTimeout(function() {
+        var tc = document.getElementById('treeChart');
+        if (tc) {
+          var ch = echarts.init(tc);
+          ch.setOption({
+            tooltip: { trigger: 'item' },
+            series: [{
+              type: 'tree', data: [treeData],
+              top: '5%', left: '8%', bottom: '5%', right: '12%',
+              symbolSize: 7, orient: 'LR',
+              label: { position: 'right', verticalAlign: 'middle', align: 'left', fontSize: 12, color: '#334155' },
+              leaves: { label: { position: 'right', verticalAlign: 'middle', align: 'left' } },
+              expandAndCollapse: true
+            }]
+          });
+        }
+      }, 100);
     }
 
     // ===== 数据维护 =====
-    function renderMaintain(mc,platform){
-      const videos=appData?.videos||[];
-      mc.innerHTML=`<div class="card"><h3>${platform} · 数据维护</h3><p style="color:#64748b;margin-bottom:16px;">修改数据后点击生成JSON，复制去GitHub替换data.json</p>${videos.map((v,i)=>{const d=v.platforms?.[platform]||{};return`<div style="background:#f8fafc;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><span style="width:160px;font-weight:500;">${v.brand} · ${v.title}</span><input type="number" id="views_${i}" value="${d.views||0}" placeholder="播放" style="width:100px;"><input type="number" id="likes_${i}" value="${d.likes||0}" placeholder="点赞" style="width:90px;"><input type="number" id="comments_${i}" value="${d.comments||0}" placeholder="评论" style="width:90px;"><input type="number" id="shares_${i}" value="${d.shares||0}" placeholder="转发" style="width:90px;"><label style="font-size:13px;"><input type="checkbox" id="pub_${i}" ${d.published?'checked':''}> 已发布</label></div>`}).join('')}<button class="btn btn-primary" onclick="generateMaintainJSON('${platform}')">生成JSON</button><div class="json-output" id="maintainOutput" style="display:none;"></div></div>`;
+    function renderMaintain(mc, platform) {
+      var videos = appData?.videos || [];
+      mc.innerHTML = '<div class="card"><h3>' + platform + ' · 数据维护</h3><p style="color:#64748b;margin-bottom:16px;">修改数据后点击生成JSON，复制去GitHub替换data.json</p>' + videos.map(function(v, i) { var d = v.platforms?.[platform] || {}; return '<div style="background:#f8fafc;border-radius:12px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><span style="width:160px;font-weight:500;">' + v.brand + ' · ' + v.title + '</span><input type="number" id="views_' + i + '" value="' + (d.views || 0) + '" placeholder="播放" style="width:100px;"><input type="number" id="likes_' + i + '" value="' + (d.likes || 0) + '" placeholder="点赞" style="width:90px;"><input type="number" id="comments_' + i + '" value="' + (d.comments || 0) + '" placeholder="评论" style="width:90px;"><input type="number" id="shares_' + i + '" value="' + (d.shares || 0) + '" placeholder="转发" style="width:90px;"><label style="font-size:13px;"><input type="checkbox" id="pub_' + i + '" ' + (d.published ? 'checked' : '') + '> 已发布</label></div>'; }).join('') + '<button class="btn btn-primary" onclick="generateMaintainJSON(\'' + platform + '\')">生成JSON</button><div class="json-output" id="maintainOutput" style="display:none;"></div></div>';
     }
-    function generateMaintainJSON(platform){
-      const data=JSON.parse(JSON.stringify(appData));
-      data.videos.forEach((v,i)=>{
-        v.platforms[platform].views=parseInt(document.getElementById(`views_${i}`).value)||0;
-        v.platforms[platform].likes=parseInt(document.getElementById(`likes_${i}`).value)||0;
-        v.platforms[platform].comments=parseInt(document.getElementById(`comments_${i}`).value)||0;
-        v.platforms[platform].shares=parseInt(document.getElementById(`shares_${i}`).value)||0;
-        v.platforms[platform].published=document.getElementById(`pub_${i}`).checked;
+
+    function generateMaintainJSON(platform) {
+      var data = JSON.parse(JSON.stringify(appData));
+      data.videos.forEach(function(v, i) {
+        v.platforms[platform].views = parseInt(document.getElementById('views_' + i).value) || 0;
+        v.platforms[platform].likes = parseInt(document.getElementById('likes_' + i).value) || 0;
+        v.platforms[platform].comments = parseInt(document.getElementById('comments_' + i).value) || 0;
+        v.platforms[platform].shares = parseInt(document.getElementById('shares_' + i).value) || 0;
+        v.platforms[platform].published = document.getElementById('pub_' + i).checked;
       });
-      const out=document.getElementById('maintainOutput');
-      out.style.display='block';
-      out.textContent=JSON.stringify(data,null,2);
+      var out = document.getElementById('maintainOutput');
+      out.style.display = 'block';
+      out.textContent = JSON.stringify(data, null, 2);
     }
   </script>
 </body>
