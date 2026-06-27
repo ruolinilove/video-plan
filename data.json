@@ -1,0 +1,37 @@
+{
+  "password": "abc123",
+  "monthly_plan": [
+    {
+      "brand": "创艺装饰",
+      "items": [
+        {"project": "公益捐赠", "type": "公益纪实", "date": "7月1日"},
+        {"project": "完工实景案例", "type": "案例展示", "date": "7月3日"},
+        {"project": "工程经理纪实", "type": "工程展示", "date": "7月15日"},
+        {"project": "设计师设计分享", "type": "知识分享", "date": "7月22日"},
+        {"project": "完工实景案例", "type": "案例展示", "date": "7月29日"}
+      ]
+    },
+    {
+      "brand": "喜客喜装饰",
+      "items": [
+        {"project": "工地大巡检", "type": "案例展示", "date": "7月9日"},
+        {"project": "装修避坑小知识", "type": "知识分享", "date": "7月12日"},
+        {"project": "完工实景", "type": "案例展示", "date": "7月19日"},
+        {"project": "新家改造前后对比", "type": "AI毛坯前后对比", "date": "7月26日"}
+      ]
+    }
+  ],
+  "weekly_tasks": [
+    {"week": "第1周 (6.29-7.5)", "output": 2, "shoot": 1},
+    {"week": "第2周 (7.6-7.12)", "output": 2, "shoot": 2},
+    {"week": "第3周 (7.13-7.19)", "output": 2, "shoot": 2},
+    {"week": "第4周 (7.20-7.26)", "output": 2, "shoot": 1, "note": "+1个AI制作"},
+    {"week": "第5周 (7.27-7.29)", "output": 1, "shoot": 1}
+  ],
+  "video_data": [
+    {"platform": "视频号", "views": 0, "likes": 0, "comments": 0},
+    {"platform": "快手", "views": 0, "likes": 0, "comments": 0},
+    {"platform": "抖音", "views": 0, "likes": 0, "comments": 0},
+    {"platform": "B站", "views": 0, "likes": 0, "comments": 0}
+  ]
+}
