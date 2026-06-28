@@ -1,7 +1,21 @@
-
 {
   "users": [
     { "username": "admin", "password": "admin123" }
+  ],
+  "video_types": [
+    "案例展示",
+    "公益纪实",
+    "工程展示",
+    "知识分享",
+    "AI毛坯前后对比",
+    "设计分享",
+    "工地巡检",
+    "客户访谈",
+    "装修避坑",
+    "开工仪式",
+    "完工验收",
+    "员工故事",
+    "活动花絮"
   ],
   "videos": [
     {
@@ -38,7 +52,7 @@
       }
     },
     {
-      "id": 4, "brand": "创艺装饰", "title": "设计师设计分享", "type": "知识分享",
+      "id": 4, "brand": "创艺装饰", "title": "设计师设计分享", "type": "设计分享",
       "planned_date": "2026-07-22", "planned_time": "10:00", "status": "待拍摄",
       "platforms": {
         "视频号": { "published": false, "publish_time": null, "views": 0, "likes": 0, "comments": 0, "shares": 0 },
@@ -60,7 +74,7 @@
       }
     },
     {
-      "id": 6, "brand": "喜客喜装饰", "title": "工地大巡检", "type": "案例展示",
+      "id": 6, "brand": "喜客喜装饰", "title": "工地大巡检", "type": "工地巡检",
       "planned_date": "2026-07-09", "planned_time": "10:00", "status": "剪辑中",
       "platforms": {
         "视频号": { "published": false, "publish_time": null, "views": 0, "likes": 0, "comments": 0, "shares": 0 },
@@ -71,7 +85,7 @@
       }
     },
     {
-      "id": 7, "brand": "喜客喜装饰", "title": "装修避坑小知识", "type": "知识分享",
+      "id": 7, "brand": "喜客喜装饰", "title": "装修避坑小知识", "type": "装修避坑",
       "planned_date": "2026-07-12", "planned_time": "10:00", "status": "待拍摄",
       "platforms": {
         "视频号": { "published": false, "publish_time": null, "views": 0, "likes": 0, "comments": 0, "shares": 0 },
