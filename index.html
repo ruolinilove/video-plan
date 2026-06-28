@@ -4,17 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>创艺品牌数据中心</title>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
-  </script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f5ff;overflow:hidden;height:100vh}
     #particleCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;pointer-events:none}
     .login-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 30%,#bfdbfe 60%,#93c5fd 100%)}
     .login-container{display:flex;justify-content:center;align-items:center;height:100vh;position:relative;z-index:2}
-    .login-box{position:relative;z-index:3;background:rgba(255,255,255,0.45);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border-radius:28px;padding:55px 50px;width:430px;text-align:center;border:1px solid rgba(255,255,255,0.6);box-shadow:0 25px 60px rgba(0,50,120,0.1),0 0 0 1px rgba(59,130,246,0.08) inset;transition:transform 0.08s ease-out}
+    .login-box{position:relative;z-index:3;background:rgba(255,255,255,0.45);backdrop-filter:blur(28px);border-radius:28px;padding:55px 50px;width:430px;text-align:center;border:1px solid rgba(255,255,255,0.6);box-shadow:0 25px 60px rgba(0,50,120,0.1),0 0 0 1px rgba(59,130,246,0.08) inset;transition:transform 0.08s ease-out}
     .login-box h2{font-size:30px;color:#0f172a;font-weight:700;margin-bottom:6px}
     .login-box .subtitle{font-size:13px;color:#64748b;margin-bottom:36px;letter-spacing:1px}
     .input-group{margin-bottom:22px;text-align:left}
@@ -45,47 +43,31 @@
     .top-bar-right{display:flex;align-items:center;gap:12px}
     .breadcrumb{font-size:13px;color:#64748b}
     .breadcrumb span{color:#3b82f6;font-weight:500}
-    .global-search{position:relative}
-    .global-search input{width:240px;padding:9px 36px 9px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;outline:0;background:#fff;transition:0.2s}
-    .global-search input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
-    .global-search .search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:14px;cursor:pointer}
+    .global-search input{width:240px;padding:9px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;outline:0;background:#fff}
     .data-time{font-size:12px;color:#94a3b8;margin-right:8px}
-    .notify-btn{position:relative;font-size:18px;cursor:pointer;color:#64748b;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:0.2s}
-    .notify-btn:hover{background:#f1f5f9}
-    .notify-badge{position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ef4444;border-radius:50%}
-    .fullscreen-btn{font-size:16px;cursor:pointer;color:#64748b;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:0.2s}
-    .fullscreen-btn:hover{background:#f1f5f9}
-    .user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;cursor:pointer;position:relative;transition:0.2s;box-shadow:0 2px 8px rgba(37,99,235,0.2)}
-    .user-avatar:hover{box-shadow:0 4px 16px rgba(37,99,235,0.35)}
-    .user-dropdown{display:none;position:absolute;top:48px;right:0;background:#fff;border-radius:14px;box-shadow:0 20px 40px rgba(0,0,0,0.1);border:1px solid #e2e8f0;width:200px;z-index:100;overflow:hidden}
+    .notify-btn,.fullscreen-btn{font-size:16px;cursor:pointer;color:#64748b;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px}
+    .user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;cursor:pointer;position:relative}
+    .user-dropdown{display:none;position:absolute;top:48px;right:0;background:#fff;border-radius:14px;box-shadow:0 20px 40px rgba(0,0,0,0.1);border:1px solid #e2e8f0;width:180px;z-index:100;overflow:hidden}
     .user-dropdown.show{display:block}
-    .user-dropdown .item{padding:12px 18px;cursor:pointer;font-size:14px;color:#334155;transition:0.15s}
-    .user-dropdown .item:hover{background:#f8fafc;color:#1e293b}
+    .user-dropdown .item{padding:12px 18px;cursor:pointer;font-size:14px;color:#334155}
+    .user-dropdown .item:hover{background:#f8fafc}
     .user-dropdown .item.danger{color:#ef4444}
-    .user-dropdown .item.danger:hover{background:#fef2f2}
-    .ticker-bar{background:#fff;border-radius:12px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:24px;border:1px solid #eef2f6;overflow:hidden;font-size:13px}
-    .ticker-title{font-weight:600;color:#3b82f6;white-space:nowrap}
-    .ticker-item{white-space:nowrap;color:#334155}
-    .ticker-item .up{color:#16a34a;font-weight:600}
-    .ticker-sep{color:#e2e8f0}
+
     .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
-    .kpi-card{background:#fff;border-radius:16px;padding:18px 16px;border:1px solid #eef2f6;box-shadow:0 2px 10px rgba(0,0,0,0.02);transition:0.2s}
-    .kpi-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.06);transform:translateY(-2px)}
+    .kpi-card{background:#fff;border-radius:16px;padding:18px 16px;border:1px solid #eef2f6;box-shadow:0 2px 10px rgba(0,0,0,0.02)}
     .kpi-card .label{font-size:13px;color:#64748b;margin-bottom:8px;font-weight:500}
     .kpi-card .value{font-size:32px;font-weight:700;color:#0f172a}
     .kpi-card .sub{font-size:12px;color:#94a3b8;margin-top:4px}
-    .kpi-card .change{font-size:12px;margin-left:6px;font-weight:600}
-    .kpi-card .change.up{color:#16a34a}
-    .kpi-card .change.down{color:#ef4444}
     .kpi-card.brand-card{border-left:4px solid #3b82f6}
     .kpi-card.brand-card.orange{border-left-color:#f59e0b}
+
     .card{background:#fff;border-radius:16px;padding:20px;border:1px solid #eef2f6;box-shadow:0 2px 12px rgba(0,0,0,0.02);margin-bottom:20px}
     .card h3{font-size:16px;margin-bottom:16px;color:#0f172a;font-weight:600;display:flex;align-items:center;gap:8px}
     .card h3::before{content:'';display:inline-block;width:4px;height:16px;background:#3b82f6;border-radius:2px}
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
     table{width:100%;border-collapse:collapse;font-size:13px}
-    th{text-align:left;padding:10px;color:#64748b;font-weight:600;border-bottom:2px solid #f1f5f9;font-size:12px;white-space:nowrap}
+    th{text-align:left;padding:10px;color:#64748b;font-weight:600;border-bottom:2px solid #f1f5f9;font-size:12px}
     td{padding:9px 10px;border-bottom:1px solid #f8fafc;color:#334155}
     tr:hover td{background:#fafbfd}
     .status-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
@@ -93,63 +75,27 @@
     .status-tag.editing{background:#fef3c7;color:#d97706}
     .status-tag.shooting{background:#e0f2fe;color:#0284c7}
     .status-tag.pending{background:#f1f5f9;color:#64748b}
-    .status-tag.overdue{background:#fef2f2;color:#ef4444;animation:blink 1s infinite}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.5}}
-    .task-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
-    .task-tag.shoot{background:#fef3c7;color:#d97706}
-    .task-tag.edit{background:#e0f2fe;color:#0284c7}
-    .task-tag.publish{background:#dcfce7;color:#16a34a}
-    .task-tag.other{background:#f1f5f9;color:#64748b}
+
     .chart-box{width:100%;height:300px}
-    .platform-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-    .platform-bar .name{width:55px;font-size:12px;color:#64748b;font-weight:500}
-    .platform-bar .bar{flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden}
-    .platform-bar .fill{height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:4px;transition:width 0.5s ease}
-    .week-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-    .week-tab{padding:5px 14px;border-radius:16px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;cursor:pointer;font-size:12px;font-weight:500;transition:0.2s}
-    .week-tab.active{background:#eff6ff;border-color:#3b82f6;color:#2563eb}
-    .filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
-    .filter-bar select,.filter-bar input{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:0;background:#fff;transition:0.2s}
-    .filter-bar select:focus,.filter-bar input:focus{border-color:#3b82f6}
-    .btn{padding:8px 18px;border-radius:8px;border:0;font-size:13px;font-weight:500;cursor:pointer;transition:0.2s}
+    .btn{padding:8px 18px;border-radius:8px;border:0;font-size:13px;font-weight:500;cursor:pointer}
     .btn-primary{background:#3b82f6;color:#fff}
     .btn-primary:hover{background:#2563eb}
     .btn-secondary{background:#f1f5f9;color:#475569}
-    .btn-secondary:hover{background:#e2e8f0}
-    .btn-sm{padding:5px 12px;font-size:12px}
-    .drawer-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:150}
-    .drawer-overlay.show{display:block}
-    .drawer{position:fixed;top:0;right:0;width:520px;height:100%;background:#fff;z-index:151;box-shadow:-10px 0 40px rgba(0,0,0,0.1);padding:24px;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s ease}
-    .drawer.show{transform:translateX(0)}
-    .drawer-close{position:absolute;top:16px;right:16px;font-size:20px;cursor:pointer;color:#64748b;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px}
-    .drawer-close:hover{background:#f1f5f9}
-    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
-    .calendar-header{font-size:12px;color:#94a3b8;padding:6px 0;font-weight:600}
-    .calendar-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:13px;cursor:pointer;transition:0.2s;position:relative}
-    .calendar-day:hover{background:#f1f5f9}
-    .calendar-day.today{background:#eff6ff;font-weight:700;color:#2563eb}
-    .calendar-day.has-event::after{content:'';width:6px;height:6px;background:#3b82f6;border-radius:50%;position:absolute;bottom:4px}
-    .calendar-day.other-month{color:#cbd5e1}
+
     .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:14px 28px;border-radius:12px;color:#fff;font-weight:500;font-size:14px;z-index:9999;transition:0.3s;opacity:0;pointer-events:none}
     .toast.show{opacity:1}
     .toast.success{background:#16a34a}
     .toast.error{background:#ef4444}
-    .json-output{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:12px;font-family:monospace;font-size:13px;white-space:pre-wrap;max-height:400px;overflow-y:auto;margin-top:12px}
-    .todo-list{list-style:none}
-    .todo-list li{padding:8px 12px;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:13px;background:#f8fafc}
-    .todo-list li .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .todo-list li .dot.urgent{background:#ef4444}
-    .todo-list li .dot.normal{background:#f59e0b}
-    .todo-list li .dot.done{background:#16a34a}
+
     .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:200;justify-content:center;align-items:center}
     .modal-overlay.show{display:flex}
     .modal{background:#fff;border-radius:20px;padding:30px;width:420px;box-shadow:0 30px 60px rgba(0,0,0,0.15)}
     .form-group{margin-bottom:18px}
     .form-group label{display:block;font-size:13px;color:#334155;margin-bottom:6px;font-weight:500}
     .form-group input,.form-group select{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:0}
-    .form-group input:focus,.form-group select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
     .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-    @media(max-width:768px){.sidebar{width:0;overflow:hidden}.main-content{margin-left:0}.kpi-row{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}.drawer{width:100%}}
+
+    @media(max-width:768px){.sidebar{width:0;overflow:hidden}.main-content{margin-left:0}.kpi-row{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -159,8 +105,8 @@
     <div class="login-box" id="loginBox">
       <h2>创艺品牌数据中心</h2>
       <div class="subtitle">CHUANGYI BRAND DATA CENTER</div>
-      <div class="input-group"><label>账号</label><input type="text" id="usernameInput" placeholder="输入您的账号" onkeyup="if(event.key==='Enter') document.getElementById('passwordInput').focus()"></div>
-      <div class="input-group"><label>密码</label><input type="password" id="passwordInput" placeholder="输入您的密码" onkeyup="if(event.key==='Enter') login()"></div>
+      <div class="input-group"><label>账号</label><input type="text" id="usernameInput" placeholder="输入您的账号" onkeyup="if(event.key==='Enter')document.getElementById('passwordInput').focus()"></div>
+      <div class="input-group"><label>密码</label><input type="password" id="passwordInput" placeholder="输入您的密码" onkeyup="if(event.key==='Enter')login()"></div>
       <button onclick="login()">进入系统</button>
       <div id="loginError" class="login-error"></div>
     </div>
@@ -170,53 +116,18 @@
   <div id="appContainer" class="app-container">
     <div class="sidebar">
       <div class="sidebar-logo"><span></span>数据中心</div>
-      <div class="nav-item active" data-page="dashboard" onclick="toggleNav(this,'dashboard')"><div class="left">📊 数据大盘</div></div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="content" onclick="toggleNav(this,'content')"><div class="left">🎬 内容管理</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-content">
-          <div class="sub-item active" data-page="content-plan" onclick="switchPage('content-plan')">发布计划</div>
-          <div class="sub-item" data-page="content-list" onclick="switchPage('content-list')">视频列表</div>
-          <div class="sub-item" data-page="content-add" onclick="switchPage('content-add')">添加视频</div>
-        </div>
-      </div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="schedule" onclick="toggleNav(this,'schedule')"><div class="left">📅 排期计划</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-schedule">
-          <div class="sub-item" data-page="schedule-chuangyi" onclick="switchPage('schedule-chuangyi')">创艺装饰</div>
-          <div class="sub-item" data-page="schedule-xikexi" onclick="switchPage('schedule-xikexi')">喜客喜装饰</div>
-        </div>
-      </div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="analysis" onclick="toggleNav(this,'analysis')"><div class="left">📈 品牌分析</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-analysis">
-          <div class="sub-item" data-page="analysis-chuangyi" onclick="switchPage('analysis-chuangyi')">创艺装饰</div>
-          <div class="sub-item" data-page="analysis-xikexi" onclick="switchPage('analysis-xikexi')">喜客喜装饰</div>
-        </div>
-      </div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="maintain" onclick="toggleNav(this,'maintain')"><div class="left">🔧 数据维护</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-maintain">
-          <div class="sub-item" data-page="maintain-wechat" onclick="switchPage('maintain-wechat')">视频号</div>
-          <div class="sub-item" data-page="maintain-kuaishou" onclick="switchPage('maintain-kuaishou')">快手</div>
-          <div class="sub-item" data-page="maintain-douyin" onclick="switchPage('maintain-douyin')">抖音</div>
-          <div class="sub-item" data-page="maintain-bilibili" onclick="switchPage('maintain-bilibili')">B站</div>
-          <div class="sub-item" data-page="maintain-weibo" onclick="switchPage('maintain-weibo')">微博</div>
-        </div>
-      </div>
+      <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><div class="left">📊 数据大盘</div></div>
+      <div class="nav-item" data-page="videos" onclick="switchPage('videos')"><div class="left">🎬 视频管理</div></div>
+      <div class="nav-item" data-page="maintain" onclick="switchPage('maintain')"><div class="left">🔧 数据维护</div></div>
     </div>
     <div class="main-content">
       <div class="top-bar">
-        <div class="top-bar-left">
-          <div class="breadcrumb" id="breadcrumb">📊 <span>数据大盘</span></div>
-          <div class="global-search"><input type="text" id="globalSearch" placeholder="搜索视频标题..." onkeyup="globalSearch(event)"><span class="search-icon" onclick="globalSearch()">🔍</span></div>
-        </div>
+        <div class="top-bar-left"><div class="breadcrumb" id="breadcrumb">📊 <span>数据大盘</span></div></div>
         <div class="top-bar-right">
-          <span class="data-time" id="dataTime">数据更新于 --</span>
-          <div class="notify-btn" onclick="showNotifications()">🔔<div class="notify-badge"></div></div>
-          <div class="fullscreen-btn" onclick="toggleFullscreen()" title="全屏">⛶</div>
+          <span class="data-time" id="dataTime"></span>
+          <div class="fullscreen-btn" onclick="toggleFullscreen()">⛶</div>
           <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()">A</div>
           <div class="user-dropdown" id="userDropdown">
-            <div class="item" onclick="showProfile()">个人中心</div>
             <div class="item" onclick="showChangePassword()">修改密码</div>
             <div class="item danger" onclick="logout()">退出登录</div>
           </div>
@@ -225,9 +136,6 @@
       <div id="pageContent"></div>
     </div>
   </div>
-
-  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
-  <div class="drawer" id="drawer"></div>
 
   <div class="modal-overlay" id="passwordModal">
     <div class="modal">
@@ -241,6 +149,11 @@
   </div>
 
   <script>
+    // ===== Supabase 初始化 =====
+    const SUPABASE_URL = 'https://rlejheshzwzfijmkongt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZWpoZXNoend6ZmlqbWtvbmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1Nzk5OTAsImV4cCI6MjA5ODE1NTk5MH0.RkDAX8aBg6CV7HweyZqhy2oLcArlFWTg3ASntmALv4M';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     // ===== 粒子系统 =====
     (function(){
       var c=document.getElementById('particleCanvas'),ctx=c.getContext('2d'),p=[],w,h,mx=-500,my=-500;
@@ -262,292 +175,140 @@
 
     function showToast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},2500)}
 
-    var appData=null,currentUser=null;
+    var currentUser=null,appData={videos:[],daily_trends:[]};
     var PLATFORMS=['视频号','快手','抖音','B站','微博'];
-    var PLATFORM_PAGE_MAP={'wechat':'视频号','kuaishou':'快手','douyin':'抖音','bilibili':'B站','weibo':'微博'};
 
-    fetch('data.json').then(function(r){return r.json()}).then(function(d){appData=d;updateDataTime()});
-    function updateDataTime(){var now=new Date();document.getElementById('dataTime').textContent='数据更新于 '+now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0')+'-'+now.getDate().toString().padStart(2,'0')+' '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');setTimeout(updateDataTime,60000)}
-
-    function login(){
-      var u=document.getElementById('usernameInput').value.trim(),pw=document.getElementById('passwordInput').value.trim(),err=document.getElementById('loginError');
-      if(!appData){err.textContent='数据加载中...';return}
-      var user=(appData.users||[]).find(function(x){return x.username===u&&x.password===pw});
-      if(user){currentUser=user;document.getElementById('loginPage').style.display='none';document.getElementById('loginBg').style.display='none';document.getElementById('particleCanvas').style.display='none';document.getElementById('appContainer').style.display='block';document.getElementById('userAvatar').textContent=user.username[0].toUpperCase();switchPage('dashboard')}else err.textContent='账号或密码错误'
+    // ===== 加载数据 =====
+    async function loadData(){
+      var vRes=await supabase.from('videos').select('*');
+      if(vRes.data)appData.videos=vRes.data;
+      var tRes=await supabase.from('daily_trends').select('*');
+      if(tRes.data)appData.daily_trends=tRes.data;
+      updateDataTime();
     }
-    function logout(){document.getElementById('appContainer').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('loginBg').style.display='block';document.getElementById('particleCanvas').style.display='block'}
-    function toggleUserDropdown(){document.getElementById('userDropdown').classList.toggle('show')}
-    addEventListener('click',function(e){if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-dropdown'))document.getElementById('userDropdown').classList.remove('show')})
-    function showProfile(){document.getElementById('userDropdown').classList.remove('show');alert('用户：'+(currentUser?.username||'未知'))}
-    function showChangePassword(){document.getElementById('userDropdown').classList.remove('show');document.getElementById('passwordModal').classList.add('show')}
+
+    function updateDataTime(){var now=new Date();var el=document.getElementById('dataTime');if(el)el.textContent='数据更新于 '+now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0')+'-'+now.getDate().toString().padStart(2,'0')+' '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');setTimeout(updateDataTime,60000)}
+
+    // ===== 登录 =====
+    async function login(){
+      var u=document.getElementById('usernameInput').value.trim(),pw=document.getElementById('passwordInput').value.trim(),err=document.getElementById('loginError');
+      var res=await supabase.from('users').select('*').eq('username',u).eq('password',pw).single();
+      if(res.data){
+        currentUser=res.data;
+        sessionStorage.setItem('loggedInUser',u);
+        await loadData();
+        enterDashboard();
+      }else{err.textContent='账号或密码错误'}
+    }
+
+    function enterDashboard(){
+      document.getElementById('loginPage').style.display='none';
+      document.getElementById('loginBg').style.display='none';
+      document.getElementById('particleCanvas').style.display='none';
+      document.getElementById('appContainer').style.display='block';
+      document.getElementById('userAvatar').textContent=currentUser.username[0].toUpperCase();
+      switchPage('dashboard');
+    }
+
+    function logout(){
+      sessionStorage.removeItem('loggedInUser');
+      document.getElementById('appContainer').style.display='none';
+      document.getElementById('loginPage').style.display='flex';
+      document.getElementById('loginBg').style.display='block';
+      document.getElementById('particleCanvas').style.display='block';
+    }
+
+    async function changePassword(){
+      var o=document.getElementById('oldPassword').value.trim(),n=document.getElementById('newPassword').value.trim(),c=document.getElementById('confirmPassword').value.trim(),e=document.getElementById('passwordError');
+      if(o!==currentUser.password){e.textContent='当前密码错误';return}
+      if(n.length<3){e.textContent='新密码至少3位';return}
+      if(n!==c){e.textContent='两次不一致';return}
+      var res=await supabase.from('users').update({password:n}).eq('id',currentUser.id);
+      if(!res.error){currentUser.password=n;showToast('密码修改成功','success');closePasswordModal()}
+      else showToast('修改失败','error')
+    }
+
+    function showChangePassword(){document.getElementById('passwordModal').classList.add('show')}
     function closePasswordModal(){document.getElementById('passwordModal').classList.remove('show')}
-    function changePassword(){var o=document.getElementById('oldPassword').value.trim(),n=document.getElementById('newPassword').value.trim(),c=document.getElementById('confirmPassword').value.trim(),e=document.getElementById('passwordError');if(o!==currentUser.password){e.textContent='当前密码错误';return}if(n.length<3){e.textContent='新密码至少3位';return}if(n!==c){e.textContent='两次不一致';return}var u=appData.users.find(function(x){return x.username===currentUser.username});if(u)u.password=n;currentUser.password=n;showToast('密码修改成功','success');closePasswordModal()}
+    function toggleUserDropdown(){document.getElementById('userDropdown').classList.toggle('show')}
     function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
-    function showNotifications(){showToast('暂无新通知','success')}
-    function globalSearch(e){if(e&&e.key!=='Enter')return;var q=document.getElementById('globalSearch').value.trim();if(q){switchPage('content-list');setTimeout(function(){var si=document.getElementById('searchInput');if(si){si.value=q;filterContentList()}},300)}}
+    addEventListener('click',function(e){if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-dropdown'))document.getElementById('userDropdown').classList.remove('show')})
 
-    function toggleNav(el,group){var sub=document.getElementById('sub-'+group),arrow=el.querySelector('.arrow');if(sub){sub.classList.toggle('show');if(arrow)arrow.classList.toggle('open')}else switchPage(el.dataset.page)}
-
+    // ===== 页面切换 =====
     function switchPage(page){
-      document.querySelectorAll('.nav-item,.sub-item').forEach(function(n){n.classList.remove('active')});
+      document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
       var t=document.querySelector('[data-page="'+page+'"]');if(t)t.classList.add('active');
       var bc=document.getElementById('breadcrumb'),mc=document.getElementById('pageContent');
       if(page==='dashboard'){bc.innerHTML='📊 <span>数据大盘</span>';renderDashboard(mc)}
-      else if(page==='content-plan'){bc.innerHTML='🎬 内容管理 / <span>发布计划</span>';renderContentPlan(mc)}
-      else if(page==='content-list'){bc.innerHTML='🎬 内容管理 / <span>视频列表</span>';renderContentList(mc)}
-      else if(page==='content-add'){bc.innerHTML='🎬 内容管理 / <span>添加视频</span>';renderContentAdd(mc)}
-      else if(page==='schedule-chuangyi'){bc.innerHTML='📅 排期计划 / <span>创艺装饰</span>';renderSchedule(mc,'创艺装饰')}
-      else if(page==='schedule-xikexi'){bc.innerHTML='📅 排期计划 / <span>喜客喜装饰</span>';renderSchedule(mc,'喜客喜装饰')}
-      else if(page==='analysis-chuangyi'){bc.innerHTML='📈 品牌分析 / <span>创艺装饰</span>';renderAnalysis(mc,'创艺装饰')}
-      else if(page==='analysis-xikexi'){bc.innerHTML='📈 品牌分析 / <span>喜客喜装饰</span>';renderAnalysis(mc,'喜客喜装饰')}
-      else if(page.startsWith('maintain-')){
-        var key=page.replace('maintain-','');
-        var pl=PLATFORM_PAGE_MAP[key]||key;
-        bc.innerHTML='🔧 数据维护 / <span>'+pl+'</span>';
-        renderMaintain(mc,pl);
-      }
+      else if(page==='videos'){bc.innerHTML='🎬 <span>视频管理</span>';renderVideos(mc)}
+      else if(page==='maintain'){bc.innerHTML='🔧 <span>数据维护</span>';renderMaintain(mc)}
     }
 
     function formatNum(n){if(n>=10000)return (n/10000).toFixed(1)+'w';if(n>=1000)return (n/1000).toFixed(1)+'k';return n.toString()}
-    function getBrandData(b){return (appData?.videos||[]).filter(function(v){return v.brand===b})}
-    function getPublished(vids){return vids.filter(function(v){return v.status==='已发布'})}
-    function sumPlatform(vids,key){var s=0;vids.forEach(function(v){PLATFORMS.forEach(function(p){s+=(v.platforms?.[p]?.[key]||0)})});return s}
-    function platformTotal(vids,plat,key){return vids.reduce(function(s,v){return s+(v.platforms?.[plat]?.[key]||0)},0)}
+    function getBrandData(b){return (appData.videos||[]).filter(function(v){return v.brand===b})}
+    function sumPlatform(vids,key){var s=0;vids.forEach(function(v){var p=v.platforms||{};PLATFORMS.forEach(function(pl){s+=(p[pl]?.[key]||0)})});return s}
 
     // ===== 数据大盘 =====
     function renderDashboard(mc){
-      if(!appData)return;
-      var cy=getBrandData('创艺装饰'),xk=getBrandData('喜客喜装饰'),cyPub=getPublished(cy),xkPub=getPublished(xk);
+      var cy=getBrandData('创艺装饰'),xk=getBrandData('喜客喜装饰');
+      var cyPub=cy.filter(function(v){return v.status==='已发布'}),xkPub=xk.filter(function(v){return v.status==='已发布'});
       var cyViews=sumPlatform(cyPub,'views'),xkViews=sumPlatform(xkPub,'views');
       var totalPub=cyPub.length+xkPub.length,totalPlan=cy.length+xk.length;
-      var platData=PLATFORMS.map(function(p){return{name:p,views:platformTotal(cyPub.concat(xkPub),p,'views')}});
+      var platData=PLATFORMS.map(function(p){return{name:p,views:sumPlatform(cyPub.concat(xkPub),'views')}});
       var maxView=Math.max.apply(null,platData.map(function(x){return x.views}))||1;
-      var weeks=appData.weekly_tasks||[];
-      var trends=appData.daily_trends||{};
-      var cyTrend=trends['创艺装饰']||[],xkTrend=trends['喜客喜装饰']||[];
-      var allDates=[];
-      var dateSet={};
-      cyTrend.concat(xkTrend).forEach(function(d){if(!dateSet[d.date]){dateSet[d.date]=true;allDates.push(d.date)}});
-      allDates.sort();allDates=allDates.slice(-30);
-
-      var statusCount={};
-      (appData.videos||[]).forEach(function(v){statusCount[v.status]=(statusCount[v.status]||0)+1});
-      var statusData=Object.entries(statusCount).map(function(e){return{name:e[0],value:e[1]}});
-
-      var today=new Date();
-      var todayStr=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
+      var today=new Date();var todayStr=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
       var todayVideos=(appData.videos||[]).filter(function(v){return v.planned_date===todayStr&&v.status!=='已发布'});
-      var overdueVideos=(appData.videos||[]).filter(function(v){return v.planned_date<todayStr&&v.status!=='已发布'});
-
-      var y=today.getFullYear(),m=today.getMonth();
-      var firstDay=new Date(y,m,1).getDay(),daysInMonth=new Date(y,m+1,0).getDate();
-      var calHtml='<div class="calendar-grid"><div class="calendar-header">日</div><div class="calendar-header">一</div><div class="calendar-header">二</div><div class="calendar-header">三</div><div class="calendar-header">四</div><div class="calendar-header">五</div><div class="calendar-header">六</div>';
-      for(var i=0;i<firstDay;i++)calHtml+='<div class="calendar-day other-month"></div>';
-      for(var d=1;d<=daysInMonth;d++){
-        var ds=y+'-'+(m+1).toString().padStart(2,'0')+'-'+d.toString().padStart(2,'0');
-        var has=(appData.videos||[]).some(function(v){return v.planned_date===ds});
-        var isToday=ds===todayStr;
-        calHtml+='<div class="calendar-day'+(isToday?' today':'')+(has?' has-event':'')+'">'+d+'</div>';
-      }
-      calHtml+='</div>';
 
       mc.innerHTML=
-        '<div class="ticker-bar"><span class="ticker-title">📡 实时动态</span><span class="ticker-sep">|</span><span class="ticker-item">今日待处理 <span class="up">'+todayVideos.length+'</span> 条</span><span class="ticker-sep">|</span><span class="ticker-item">延期未发布 <span style="color:#ef4444;font-weight:600;">'+overdueVideos.length+'</span> 条</span><span class="ticker-sep">|</span><span class="ticker-item">本月计划 <span style="font-weight:600;">'+totalPlan+'</span> 条</span></div>'+
         '<div class="kpi-row">'+
-          '<div class="kpi-card brand-card"><div class="label">🏠 创艺装饰 · 总播放</div><div class="value">'+formatNum(cyViews)+'</div><div class="sub">已发布 '+cyPub.length+' 条 <span class="change up">↑12%</span></div></div>'+
-          '<div class="kpi-card brand-card orange"><div class="label">🏡 喜客喜装饰 · 总播放</div><div class="value">'+formatNum(xkViews)+'</div><div class="sub">已发布 '+xkPub.length+' 条 <span class="change up">↑8%</span></div></div>'+
-          '<div class="kpi-card"><div class="label">📹 本月发布进度</div><div class="value">'+totalPub+'<span style="font-size:16px;color:#64748b;"> / '+totalPlan+'</span></div><div class="sub">完成率 '+(totalPlan>0?Math.round(totalPub/totalPlan*100):0)+'%</div></div>'+
-          '<div class="kpi-card"><div class="label">⚠️ 延期未发布</div><div class="value" style="color:'+(overdueVideos.length>0?'#ef4444':'#0f172a')+'">'+overdueVideos.length+'</div><div class="sub">需尽快处理</div></div>'+
+          '<div class="kpi-card brand-card"><div class="label">🏠 创艺装饰 · 总播放</div><div class="value">'+formatNum(cyViews)+'</div><div class="sub">已发布 '+cyPub.length+' 条</div></div>'+
+          '<div class="kpi-card brand-card orange"><div class="label">🏡 喜客喜装饰 · 总播放</div><div class="value">'+formatNum(xkViews)+'</div><div class="sub">已发布 '+xkPub.length+' 条</div></div>'+
+          '<div class="kpi-card"><div class="label">📹 本月发布进度</div><div class="value">'+totalPub+'<span style="font-size:16px;color:#64748b;"> / '+totalPlan+'</span></div><div class="sub">计划总数 '+totalPlan+' 条</div></div>'+
+          '<div class="kpi-card"><div class="label">📋 今日待处理</div><div class="value">'+todayVideos.length+'</div><div class="sub">条视频待拍摄/剪辑/发布</div></div>'+
         '</div>'+
         '<div class="grid-2">'+
-          '<div class="card"><h3>近30天播放趋势</h3><div id="trendChart" class="chart-box"></div></div>'+
-          '<div class="card"><h3>视频状态分布</h3><div id="statusChart" class="chart-box"></div></div>'+
-        '</div>'+
-        '<div class="grid-2">'+
-          '<div class="card"><h3>各平台播放量对比</h3>'+platData.map(function(p){return '<div class="platform-bar"><span class="name">'+p.name+'</span><div class="bar"><div class="fill" style="width:'+Math.round(p.views/maxView*100)+'%"></div></div><span style="font-size:12px;color:#334155;min-width:55px;text-align:right;">'+formatNum(p.views)+'</span></div>'}).join('')+'</div>'+
-          '<div class="card"><h3>'+(m+1)+'月发布日历</h3>'+calHtml+'</div>'+
-        '</div>'+
-        '<div class="grid-2">'+
-          '<div class="card"><h3>📋 今日待办</h3>'+(todayVideos.length===0?'<p style="color:#94a3b8;">今天没有待处理任务 ✅</p>':'<ul class="todo-list">'+todayVideos.map(function(v){return '<li><span class="dot urgent"></span>'+v.brand+' · '+v.title+' <span style="color:#94a3b8;">'+v.planned_time+'</span></li>'}).join('')+'</ul>')+'</div>'+
-          '<div class="card"><h3>每周执行汇总</h3><div id="weekBarChart" class="chart-box"></div></div>'+
+          '<div class="card"><h3>各平台播放量对比</h3>'+platData.map(function(p){return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="width:55px;font-size:12px;color:#64748b;">'+p.name+'</span><div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;"><div style="height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:4px;width:'+Math.round(p.views/maxView*100)+'%"></div></div><span style="font-size:12px;color:#334155;">'+formatNum(p.views)+'</span></div>'}).join('')+'</div>'+
+          '<div class="card"><h3>📋 今日待办</h3>'+(todayVideos.length===0?'<p style="color:#94a3b8;">今天没有待处理任务 ✅</p>':'<ul>'+todayVideos.map(function(v){return '<li style="padding:8px 12px;border-radius:8px;margin-bottom:6px;background:#f8fafc;">'+v.brand+' · '+v.title+' <span style="color:#94a3b8;">'+v.planned_time+'</span></li>'}).join('')+'</ul>')+'</div>'+
         '</div>';
-
-      setTimeout(function(){
-        var tc=document.getElementById('trendChart');
-        if(tc){var ch=echarts.init(tc);ch.setOption({tooltip:{trigger:'axis'},legend:{data:['创艺装饰','喜客喜装饰'],textStyle:{color:'#64748b'}},xAxis:{type:'category',data:allDates,axisLabel:{color:'#94a3b8',fontSize:10,rotate:30}},yAxis:{type:'value',axisLabel:{color:'#94a3b8'}},series:[{name:'创艺装饰',type:'line',data:allDates.map(function(d){var f=cyTrend.find(function(t){return t.date===d});return f?f.views:null}),smooth:true,color:'#3b82f6',lineStyle:{width:2}},{name:'喜客喜装饰',type:'line',data:allDates.map(function(d){var f=xkTrend.find(function(t){return t.date===d});return f?f.views:null}),smooth:true,color:'#f59e0b',lineStyle:{width:2}}]})}
-        var sc=document.getElementById('statusChart');
-        if(sc){var ch=echarts.init(sc);ch.setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['50%','75%'],data:statusData,label:{color:'#334155'},itemStyle:{borderColor:'#fff',borderWidth:3}}]})}
-        var wc=document.getElementById('weekBarChart');
-        if(wc){var ch=echarts.init(wc);ch.setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:weeks.map(function(w){return w.week}),axisLabel:{color:'#94a3b8',rotate:15,fontSize:10}},yAxis:{type:'value',axisLabel:{color:'#94a3b8'}},series:[{name:'出片',type:'bar',data:weeks.map(function(w){return w.output}),color:'#3b82f6',barWidth:'16',itemStyle:{borderRadius:[5,5,0,0]}},{name:'拍摄',type:'bar',data:weeks.map(function(w){return w.shoot}),color:'#f59e0b',barWidth:'16',itemStyle:{borderRadius:[5,5,0,0]}}]})}
-      },150);
     }
 
-    // ===== 内容管理 =====
-    function renderContentPlan(mc){
-      var vids=appData?.videos||[];
-      mc.innerHTML='<div class="card"><h3>视频发布计划</h3><div class="filter-bar"><select id="filterBrand" onchange="renderContentPlanFiltered()"><option value="">全部品牌</option><option>创艺装饰</option><option>喜客喜装饰</option></select><select id="filterType" onchange="renderContentPlanFiltered()"><option value="">全部类型</option></select><select id="filterStatus" onchange="renderContentPlanFiltered()"><option value="">全部状态</option><option>已发布</option><option>拍摄中</option><option>剪辑中</option><option>待拍摄</option></select></div><table><thead><tr><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>时间</th><th>状态</th></tr></thead><tbody id="planTableBody"></tbody></table></div>';
-      var types=[...new Set(vids.map(function(v){return v.type}))];
-      document.getElementById('filterType').innerHTML='<option value="">全部类型</option>'+types.map(function(t){return '<option>'+t+'</option>'}).join('');
-      renderContentPlanFiltered();
-    }
-    function renderContentPlanFiltered(){
-      var vids=appData?.videos||[];
-      var b=document.getElementById('filterBrand')?.value||'';
-      var tp=document.getElementById('filterType')?.value||'';
-      var s=document.getElementById('filterStatus')?.value||'';
-      var filtered=vids.filter(function(v){return (!b||v.brand===b)&&(!tp||v.type===tp)&&(!s||v.status===s)});
-      var tbody=document.getElementById('planTableBody');
-      if(tbody)tbody.innerHTML=filtered.map(function(v){return '<tr><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td>'+v.planned_time+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td></tr>'}).join('')||'<tr><td colspan="6" style="color:#94a3b8;text-align:center;">无匹配数据</td></tr>';
-    }
-
-    function renderContentList(mc){
-      var vids=appData?.videos||[];
-      mc.innerHTML='<div class="card"><h3>全部视频列表</h3><div class="filter-bar"><input type="text" id="searchInput" placeholder="搜索标题..." onkeyup="filterContentList()"><select id="listFilterBrand" onchange="filterContentList()"><option value="">全部品牌</option><option>创艺装饰</option><option>喜客喜装饰</option></select><select id="listFilterStatus" onchange="filterContentList()"><option value="">全部状态</option><option>已发布</option><option>拍摄中</option><option>剪辑中</option><option>待拍摄</option></select><button class="btn btn-sm btn-secondary" onclick="exportCSV()">📥 导出CSV</button></div><table><thead><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th><th>操作</th></tr></thead><tbody id="listTableBody"></tbody></table></div>';
-      filterContentList();
-    }
-    function filterContentList(){
-      var vids=appData?.videos||[];
-      var q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-      var b=document.getElementById('listFilterBrand')?.value||'';
-      var s=document.getElementById('listFilterStatus')?.value||'';
-      var filtered=vids.filter(function(v){return (!q||v.title.toLowerCase().includes(q))&&(!b||v.brand===b)&&(!s||v.status===s)});
-      filtered.sort(function(a,b){return b.planned_date.localeCompare(a.planned_date)});
-      var tbody=document.getElementById('listTableBody');
-      if(tbody)tbody.innerHTML=filtered.map(function(v){var tv=sumPlatform([v],'views');return '<tr><td>'+v.id+'</td><td>'+v.brand+'</td><td style="cursor:pointer;color:#2563eb;" onclick="openVideoDetail('+v.id+')">'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td><td>'+formatNum(tv)+'</td><td><button class="btn btn-sm btn-secondary" onclick="openVideoDetail('+v.id+')">详情</button></td></tr>'}).join('')||'<tr><td colspan="8" style="color:#94a3b8;text-align:center;">无匹配数据</td></tr>';
-    }
-
-    function openVideoDetail(id){
-      var v=(appData?.videos||[]).find(function(x){return x.id===id});if(!v)return;
-      var dr=document.getElementById('drawer'),ov=document.getElementById('drawerOverlay');
-      dr.innerHTML='<div class="drawer-close" onclick="closeDrawer()">✕</div><h3 style="margin-bottom:16px;">'+v.brand+' · '+v.title+'</h3><p style="color:#64748b;margin-bottom:8px;">计划日期：'+v.planned_date+' '+v.planned_time+' | 状态：<span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></p><table style="margin-top:12px;"><thead><tr><th>平台</th><th>已发布</th><th>发布时间</th><th>播放</th><th>点赞</th><th>评论</th><th>转发</th></tr></thead><tbody>'+PLATFORMS.map(function(p){var d=v.platforms?.[p]||{};return '<tr><td>'+p+'</td><td>'+(d.published?'✅':'❌')+'</td><td>'+(d.publish_time||'--')+'</td><td>'+formatNum(d.views||0)+'</td><td>'+formatNum(d.likes||0)+'</td><td>'+formatNum(d.comments||0)+'</td><td>'+formatNum(d.shares||0)+'</td></tr>'}).join('')+'</tbody></table>';
-      dr.classList.add('show');ov.classList.add('show');
-    }
-    function closeDrawer(){document.getElementById('drawer').classList.remove('show');document.getElementById('drawerOverlay').classList.remove('show')}
-
-    function exportCSV(){
-      var vids=appData?.videos||[];
-      var csv='ID,品牌,标题,类型,日期,状态,总播放\n'+vids.map(function(v){return v.id+','+v.brand+','+v.title+','+v.type+','+v.planned_date+','+v.status+','+sumPlatform([v],'views')}).join('\n');
-      var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='视频列表.csv';a.click();showToast('导出成功','success')
-    }
-
-    function renderContentAdd(mc){
-      mc.innerHTML='<div class="card"><h3>添加新视频</h3><p style="color:#64748b;margin-bottom:16px;">填写信息后生成JSON，复制到GitHub data.json中。</p><div class="form-group"><label>品牌</label><select id="addBrand" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;"><option>创艺装饰</option><option>喜客喜装饰</option></select></div><div class="form-group"><label>标题</label><input type="text" id="addTitle"></div><div class="form-group"><label>类型</label><input type="text" id="addType"></div><div class="form-group"><label>日期</label><input type="date" id="addDate" value="2026-07-01"></div><div class="form-group"><label>时间</label><input type="time" id="addTime" value="10:00"></div><button class="btn btn-primary" onclick="generateNewVideo()">生成JSON</button><div class="json-output" id="addOutput" style="display:none;"></div></div>';
-    }
-    function generateNewVideo(){
-      var brand=document.getElementById('addBrand').value,title=document.getElementById('addTitle').value,type=document.getElementById('addType').value,date=document.getElementById('addDate').value,time=document.getElementById('addTime').value;
-      var platforms={};PLATFORMS.forEach(function(p){platforms[p]={published:false,publish_time:null,views:0,likes:0,comments:0,shares:0}});
-      var maxId=Math.max.apply(null,(appData?.videos||[]).map(function(v){return v.id}))||0;
-      var nv={id:maxId+1,brand:brand,title:title,type:type,planned_date:date,planned_time:time,status:'待拍摄',platforms:platforms};
-      var out=document.getElementById('addOutput');out.style.display='block';out.textContent=JSON.stringify(nv,null,2);
-      showToast('JSON已生成，请复制到GitHub','success')
-    }
-
-    // ===== 排期计划 =====
-    function renderSchedule(mc,brand){
-      var weeks=appData?.weekly_tasks||[];
-      var today=new Date();
-      var todayStr=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
-      var overdue=(appData?.videos||[]).filter(function(v){return v.brand===brand&&v.planned_date<todayStr&&v.status!=='已发布'});
-      mc.innerHTML='<div class="card"><h3>'+brand+' · 周计划详情</h3><div class="week-tabs" id="weekTabBar"></div><table id="weekDetailTable"><thead><tr><th>日期</th><th>动作</th><th>任务</th></tr></thead><tbody></tbody></table></div>'+(overdue.length>0?'<div class="card" style="margin-top:20px;"><h3>⚠️ 延期提醒</h3>'+overdue.map(function(v){return '<p style="color:#ef4444;margin-bottom:4px;">🔴 '+v.title+' · 计划 '+v.planned_date+' · 当前：'+v.status+'</p>'}).join('')+'</div>':'');
-      window._renderWeek=function(i){
-        document.getElementById('weekTabBar').innerHTML=weeks.map(function(w,j){return '<div class="week-tab '+(j===i?'active':'')+'" onclick="window._renderWeek('+j+')">'+w.week.split(' ')[0]+'</div>'}).join('');
-        var cur=weeks[i];if(!cur)return;
-        document.querySelector('#weekDetailTable tbody').innerHTML=cur.tasks.map(function(t){var cls='';if(t.tag==='拍摄')cls='shoot';else if(t.tag==='剪辑'||t.tag==='定稿'||t.tag==='审核')cls='edit';else if(t.tag==='发布')cls='publish';else cls='other';return '<tr><td>'+t.day+'</td><td><span class="task-tag '+cls+'">'+t.action+'</span></td><td>'+t.detail+'</td></tr>'}).join('');
-      };
-      window._renderWeek(0);
-    }
-
-    // ===== 品牌分析 =====
-    function renderAnalysis(mc,brand){
-      var vids=getBrandData(brand);
-      var typeCount={};vids.forEach(function(v){typeCount[v.type]=(typeCount[v.type]||0)+1});
-      var treeData={name:brand,children:Object.entries(typeCount).map(function(e){return{name:e[0],children:vids.filter(function(v){return v.type===e[0]}).map(function(v){return{name:v.title}})}})};
-      var platData=PLATFORMS.map(function(p){return{name:p,views:platformTotal(vids,p,'views')}});
-      var maxV=Math.max.apply(null,platData.map(function(x){return x.views}))||1;
-
-      // 雷达图数据
-      var cyVids=getBrandData('创艺装饰'),xkAllVids=getBrandData('喜客喜装饰');
-      var radarIndicator=PLATFORMS.map(function(p){return{name:p,max:Math.max(platformTotal(cyVids,p,'views'),platformTotal(xkAllVids,p,'views'))||1}});
-      var cyRadar={name:'创艺装饰',value:PLATFORMS.map(function(p){return platformTotal(cyVids,p,'views')}),lineStyle:{color:'#3b82f6'},areaStyle:{color:'rgba(59,130,246,0.1)'}};
-      var xkRadar={name:'喜客喜装饰',value:PLATFORMS.map(function(p){return platformTotal(xkAllVids,p,'views')}),lineStyle:{color:'#f59e0b'},areaStyle:{color:'rgba(245,158,11,0.1)'}};
-
-      mc.innerHTML=
-        '<div class="grid-2">'+
-          '<div class="card"><h3>'+brand+' · 类型树状图</h3><div id="treeChart" class="chart-box"></div></div>'+
-          '<div class="card"><h3>品牌对比 · 各平台播放量</h3><div id="radarChart" class="chart-box"></div></div>'+
-        '</div>'+
-        '<div class="card"><h3>各平台播放量</h3>'+platData.map(function(p){return '<div class="platform-bar"><span class="name">'+p.name+'</span><div class="bar"><div class="fill" style="width:'+Math.round(p.views/maxV*100)+'%"></div></div><span style="font-size:12px;color:#334155;min-width:55px;text-align:right;">'+formatNum(p.views)+'</span></div>'}).join('')+'</div>';
-
-      setTimeout(function(){
-        var tc=document.getElementById('treeChart');
-        if(tc){var ch=echarts.init(tc);ch.setOption({tooltip:{trigger:'item'},series:[{type:'tree',data:[treeData],top:'5%',left:'8%',bottom:'5%',right:'12%',symbolSize:7,orient:'LR',label:{color:'#334155',fontSize:12},expandAndCollapse:true}]})}
-        var rc=document.getElementById('radarChart');
-        if(rc){var ch=echarts.init(rc);ch.setOption({radar:{indicator:radarIndicator,axisName:{color:'#64748b'}},series:[{type:'radar',data:[cyRadar,xkRadar]}]})}
-      },150);
+    // ===== 视频管理 =====
+    function renderVideos(mc){
+      var vids=appData.videos||[];
+      mc.innerHTML='<div class="card"><h3>全部视频列表</h3><table><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th></tr>'+vids.map(function(v){var tv=sumPlatform([v],'views');return '<tr><td>'+v.id+'</td><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td><td>'+formatNum(tv)+'</td></tr>'}).join('')+'</table></div>';
     }
 
     // ===== 数据维护 =====
-    function renderMaintain(mc,platform){
-      var vids=appData?.videos||[];
-      mc.innerHTML='<div class="card"><h3>'+platform+' · 数据维护</h3><button class="btn btn-sm btn-secondary" onclick="batchFill(\''+platform+'\')" style="margin-bottom:12px;">📋 批量填充</button> <button class="btn btn-sm btn-secondary" onclick="document.getElementById(\'importFile\').click()" style="margin-bottom:12px;">📥 导入Excel</button><input type="file" id="importFile" accept=".xlsx,.csv" style="display:none;" onchange="importExcel(\''+platform+'\',this)">'+vids.map(function(v,i){var d=v.platforms?.[platform]||{};return '<div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="width:150px;font-weight:500;font-size:13px;">'+v.brand+' · '+v.title+'</span><input type="number" id="views_'+i+'" value="'+(d.views||0)+'" placeholder="播放" style="width:90px;font-size:12px;"><input type="number" id="likes_'+i+'" value="'+(d.likes||0)+'" placeholder="点赞" style="width:80px;font-size:12px;"><input type="number" id="comments_'+i+'" value="'+(d.comments||0)+'" placeholder="评论" style="width:80px;font-size:12px;"><input type="number" id="shares_'+i+'" value="'+(d.shares||0)+'" placeholder="转发" style="width:80px;font-size:12px;"><label style="font-size:12px;"><input type="checkbox" id="pub_'+i+'" '+(d.published?'checked':'')+'> 已发布</label></div>'}).join('')+'<button class="btn btn-primary" onclick="submitData(\''+platform+'\')">提交数据</button><div class="json-output" id="submitResult" style="display:none;"></div></div>';
+    function renderMaintain(mc){
+      var vids=appData.videos||[];
+      mc.innerHTML='<div class="card"><h3>数据维护</h3><p style="color:#64748b;margin-bottom:16px;">修改数据后点击提交，直接保存到数据库。</p>'+vids.map(function(v,i){var p=v.platforms||{};return '<div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:10px;"><div style="font-weight:500;margin-bottom:6px;">'+v.brand+' · '+v.title+'</div>'+PLATFORMS.map(function(pl){var d=p[pl]||{};return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;"><span style="width:50px;font-size:12px;">'+pl+'</span><input type="number" id="v'+i+'_'+pl+'_views" value="'+(d.views||0)+'" placeholder="播放" style="width:80px;font-size:12px;"><input type="number" id="v'+i+'_'+pl+'_likes" value="'+(d.likes||0)+'" placeholder="点赞" style="width:70px;font-size:12px;"><input type="number" id="v'+i+'_'+pl+'_comments" value="'+(d.comments||0)+'" placeholder="评论" style="width:70px;font-size:12px;"></div>'}).join('')+'</div>'}).join('')+'<button class="btn btn-primary" onclick="submitData()">💾 提交到数据库</button></div>';
     }
-    function batchFill(platform){
-      var vids=appData?.videos||[];
-      vids.forEach(function(v,i){
-        var ve=document.getElementById('views_'+i),le=document.getElementById('likes_'+i),ce=document.getElementById('comments_'+i),se=document.getElementById('shares_'+i);
-        if(ve)ve.value=0;if(le)le.value=0;if(ce)ce.value=0;if(se)se.value=0;
+
+    async function submitData(){
+      var vids=appData.videos||[];
+      for(var i=0;i<vids.length;i++){
+        var platforms={};
+        PLATFORMS.forEach(function(pl){
+          platforms[pl]={
+            published:false,
+            views:parseInt(document.getElementById('v'+i+'_'+pl+'_views')?.value)||0,
+            likes:parseInt(document.getElementById('v'+i+'_'+pl+'_likes')?.value)||0,
+            comments:parseInt(document.getElementById('v'+i+'_'+pl+'_comments')?.value)||0
+          };
+        });
+        await supabase.from('videos').update({platforms:platforms}).eq('id',vids[i].id);
+      }
+      await loadData();
+      showToast('✅ 数据已保存到数据库！','success');
+      switchPage('dashboard');
+    }
+
+    // ===== 自动登录检查 =====
+    var savedUser=sessionStorage.getItem('loggedInUser');
+    if(savedUser){
+      supabase.from('users').select('*').eq('username',savedUser).single().then(function(res){
+        if(res.data){currentUser=res.data;loadData().then(function(){enterDashboard()})}
       });
-      showToast('已批量填充为0，请修改后提交','success')
-    }
-    function importExcel(platform,input){
-      var file=input.files[0];if(!file)return;
-      var reader=new FileReader();
-      reader.onload=function(e){
-        try{
-          var data=new Uint8Array(e.target.result);
-          var wb=XLSX.read(data,{type:'array'});
-          var ws=wb.Sheets[wb.SheetNames[0]];
-          var json=XLSX.utils.sheet_to_json(ws);
-          json.forEach(function(row,i){
-            if(i>=appData.videos.length)return;
-            var ve=document.getElementById('views_'+i),le=document.getElementById('likes_'+i),ce=document.getElementById('comments_'+i),se=document.getElementById('shares_'+i);
-            if(ve&&row['播放']!=null)ve.value=row['播放'];
-            if(le&&row['点赞']!=null)le.value=row['点赞'];
-            if(ce&&row['评论']!=null)ce.value=row['评论'];
-            if(se&&row['转发']!=null)se.value=row['转发'];
-          });
-          showToast('导入成功！请检查数据后提交','success')
-        }catch(err){showToast('导入失败：'+err.message,'error')}
-      };
-      reader.readAsArrayBuffer(file);
-    }
-    function submitData(platform){
-      var data=JSON.parse(JSON.stringify(appData));
-      data.videos.forEach(function(v,i){
-        var ve=document.getElementById('views_'+i),le=document.getElementById('likes_'+i),ce=document.getElementById('comments_'+i),se=document.getElementById('shares_'+i),pe=document.getElementById('pub_'+i);
-        if(ve)v.platforms[platform].views=parseInt(ve.value)||0;
-        if(le)v.platforms[platform].likes=parseInt(le.value)||0;
-        if(ce)v.platforms[platform].comments=parseInt(ce.value)||0;
-        if(se)v.platforms[platform].shares=parseInt(se.value)||0;
-        if(pe)v.platforms[platform].published=pe.checked;
-      });
-      var jsonStr=JSON.stringify(data,null,2);
-      if(navigator.clipboard&&navigator.clipboard.writeText){
-        navigator.clipboard.writeText(jsonStr).then(function(){
-          showToast('✅ JSON已复制！打开GitHub编辑页粘贴','success');
-          appData=data;
-          setTimeout(function(){
-            window.open('https://github.com/ruolinilove/video-plan/edit/main/data.json','_blank');
-            switchPage('dashboard');
-          },800)
-        }).catch(function(){showFallback(jsonStr)})
-      }else{showFallback(jsonStr)}
-    }
-    function showFallback(jsonStr){
-      var out=document.getElementById('submitResult');
-      if(out){out.style.display='block';out.textContent=jsonStr}
-      showToast('⚠️ 请手动复制下方JSON到GitHub','error')
     }
   </script>
 </body>
