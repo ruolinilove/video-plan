@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>创艺品牌数据中心</title>
-  <!-- Echats 先加载 -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f5ff;overflow:hidden;height:100vh}
@@ -30,6 +30,13 @@
     .nav-item:hover{background:#f1f5f9;color:#1e293b}
     .nav-item.active{background:#eff6ff;color:#2563eb;font-weight:600}
     .nav-item .left{display:flex;align-items:center;gap:10px}
+    .nav-item .arrow{font-size:10px;transition:0.2s;color:#94a3b8}
+    .nav-item .arrow.open{transform:rotate(90deg)}
+    .sub-nav{display:none;padding-left:16px}
+    .sub-nav.show{display:block}
+    .sub-item{padding:10px 20px 10px 48px;color:#64748b;cursor:pointer;font-size:13px;transition:0.15s;border-radius:8px;margin:1px 8px}
+    .sub-item:hover{background:#f8fafc;color:#334155}
+    .sub-item.active{background:#eff6ff;color:#2563eb;font-weight:500}
     .main-content{margin-left:230px;padding:20px 24px;height:100vh;overflow-y:auto}
     .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:sticky;top:0;background:linear-gradient(180deg,#f0f5ff 0%,#f8fafc 100%);z-index:5;padding:8px 0}
     .top-bar-left{display:flex;align-items:center;gap:16px}
@@ -62,7 +69,19 @@
     .status-tag.editing{background:#fef3c7;color:#d97706}
     .status-tag.shooting{background:#e0f2fe;color:#0284c7}
     .status-tag.pending{background:#f1f5f9;color:#64748b}
+    .task-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
+    .task-tag.shoot{background:#fef3c7;color:#d97706}
+    .task-tag.edit{background:#e0f2fe;color:#0284c7}
+    .task-tag.publish{background:#dcfce7;color:#16a34a}
+    .task-tag.other{background:#f1f5f9;color:#64748b}
     .chart-box{width:100%;height:300px}
+    .platform-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .platform-bar .name{width:55px;font-size:12px;color:#64748b;font-weight:500}
+    .platform-bar .bar{flex:1;height:8px;background:#f1f5f9;border-radius:4px}
+    .platform-bar .fill{height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:4px}
+    .week-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+    .week-tab{padding:5px 14px;border-radius:16px;background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;cursor:pointer;font-size:12px;font-weight:500}
+    .week-tab.active{background:#eff6ff;border-color:#3b82f6;color:#2563eb}
     .btn{padding:8px 18px;border-radius:8px;border:0;font-size:13px;font-weight:500;cursor:pointer}
     .btn-primary{background:#3b82f6;color:#fff}
     .btn-primary:hover{background:#2563eb}
@@ -78,13 +97,12 @@
     .form-group label{display:block;font-size:13px;color:#334155;margin-bottom:6px;font-weight:500}
     .form-group input{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:0}
     .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+    @media(max-width:768px){.sidebar{width:0;overflow:hidden}.main-content{margin-left:0}.kpi-row{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <canvas id="particleCanvas"></canvas>
   <div class="login-bg" id="loginBg"></div>
-
-  <!-- 登录界面 -->
   <div id="loginPage" class="login-container">
     <div class="login-box" id="loginBox">
       <h2>创艺品牌数据中心</h2>
@@ -97,13 +115,42 @@
   </div>
   <div class="toast" id="toast"></div>
 
-  <!-- 后台框架 -->
   <div id="appContainer" class="app-container">
     <div class="sidebar">
       <div class="sidebar-logo"><span></span>数据中心</div>
-      <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><div class="left">📊 数据大盘</div></div>
-      <div class="nav-item" data-page="videos" onclick="switchPage('videos')"><div class="left">🎬 视频管理</div></div>
-      <div class="nav-item" data-page="maintain" onclick="switchPage('maintain')"><div class="left">🔧 数据维护</div></div>
+      <div class="nav-item active" data-page="dashboard" onclick="toggleNav(this,'dashboard')"><div class="left">📊 数据大盘</div></div>
+      <div class="nav-group">
+        <div class="nav-item" data-page="content" onclick="toggleNav(this,'content')"><div class="left">🎬 内容管理</div><span class="arrow">▶</span></div>
+        <div class="sub-nav" id="sub-content">
+          <div class="sub-item active" data-page="content-plan" onclick="switchPage('content-plan')">发布计划</div>
+          <div class="sub-item" data-page="content-list" onclick="switchPage('content-list')">视频列表</div>
+          <div class="sub-item" data-page="content-add" onclick="switchPage('content-add')">添加视频</div>
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-item" data-page="schedule" onclick="toggleNav(this,'schedule')"><div class="left">📅 排期计划</div><span class="arrow">▶</span></div>
+        <div class="sub-nav" id="sub-schedule">
+          <div class="sub-item" data-page="schedule-chuangyi" onclick="switchPage('schedule-chuangyi')">创艺装饰</div>
+          <div class="sub-item" data-page="schedule-xikexi" onclick="switchPage('schedule-xikexi')">喜客喜装饰</div>
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-item" data-page="analysis" onclick="toggleNav(this,'analysis')"><div class="left">📈 品牌分析</div><span class="arrow">▶</span></div>
+        <div class="sub-nav" id="sub-analysis">
+          <div class="sub-item" data-page="analysis-chuangyi" onclick="switchPage('analysis-chuangyi')">创艺装饰</div>
+          <div class="sub-item" data-page="analysis-xikexi" onclick="switchPage('analysis-xikexi')">喜客喜装饰</div>
+        </div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-item" data-page="maintain" onclick="toggleNav(this,'maintain')"><div class="left">🔧 数据维护</div><span class="arrow">▶</span></div>
+        <div class="sub-nav" id="sub-maintain">
+          <div class="sub-item" data-page="maintain-wechat" onclick="switchPage('maintain-wechat')">视频号</div>
+          <div class="sub-item" data-page="maintain-kuaishou" onclick="switchPage('maintain-kuaishou')">快手</div>
+          <div class="sub-item" data-page="maintain-douyin" onclick="switchPage('maintain-douyin')">抖音</div>
+          <div class="sub-item" data-page="maintain-bilibili" onclick="switchPage('maintain-bilibili')">B站</div>
+          <div class="sub-item" data-page="maintain-weibo" onclick="switchPage('maintain-weibo')">微博</div>
+        </div>
+      </div>
     </div>
     <div class="main-content">
       <div class="top-bar">
@@ -121,7 +168,6 @@
     </div>
   </div>
 
-  <!-- 修改密码弹窗 -->
   <div class="modal-overlay" id="passwordModal">
     <div class="modal">
       <h3>修改密码</h3>
@@ -133,8 +179,8 @@
     </div>
   </div>
 
-  <!-- 粒子特效（独立在最前，不受库加载影响） -->
   <script>
+    // ===== 粒子特效（独立，不受其他脚本影响） =====
     (function(){
       var c=document.getElementById('particleCanvas'),ctx=c.getContext('2d'),p=[],w,h,mx=-500,my=-500;
       function rs(){w=c.width=innerWidth;h=c.height=innerHeight}
@@ -151,78 +197,56 @@
         }requestAnimationFrame(dr)
       }dr();
     })();
-    // 登录卡片微动
     addEventListener('mousemove',function(e){var b=document.getElementById('loginBox');if(!b||b.offsetParent===null)return;var cx=innerWidth/2,cy=innerHeight/2;b.style.transform='translate('+((e.clientX-cx)/cx*4)+'px,'+((e.clientY-cy)/cy*4)+'px)'});
   </script>
 
-  <!-- Supabase 库加载（带备用） -->
   <script>
-    var supabaseReady = false;
-    function initSupabase(){
-      if (window.supabase) {
-        try {
-          const supabase = window.supabase.createClient(
-            'https://rlejheshzwzfijmkongt.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZWpoZXNoend6ZmlqbWtvbmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1Nzk5OTAsImV4cCI6MjA5ODE1NTk5MH0.RkDAX8aBg6CV7HweyZqhy2oLcArlFWTg3ASntmALv4M'
-          );
-          window._supabase = supabase;
-          supabaseReady = true;
-          console.log('Supabase 初始化成功');
-        } catch(e) {
-          console.error('Supabase 初始化失败', e);
-        }
-      } else {
-        console.warn('Supabase 库未载入，尝试备用CDN...');
-        // 备用CDN
-        var script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        script.onload = function(){ initSupabase(); };
-        document.head.appendChild(script);
-      }
-    }
-  </script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2" onload="initSupabase()" onerror="initSupabase()"></script>
-
-  <script>
-    // ===== 业务逻辑（放在 Supabase 初始化之后） =====
-    var currentUser=null, appData={videos:[], daily_trends:[]};
-    var PLATFORMS=['视频号','快手','抖音','B站','微博'];
+    // ===== Supabase 初始化 =====
+    const SUPABASE_URL = 'https://rlejheshzwzfijmkongt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZWpoZXNoend6ZmlqbWtvbmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1Nzk5OTAsImV4cCI6MjA5ODE1NTk5MH0.RkDAX8aBg6CV7HweyZqhy2oLcArlFWTg3ASntmALv4M';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentUser = null;
+    let appData = { videos: [], dailyTrends: [], weeklyTasks: [] };
+    const PLATFORMS = ['视频号','快手','抖音','B站','微博'];
+    const PLATFORM_PAGE_MAP = {'wechat':'视频号','kuaishou':'快手','douyin':'抖音','bilibili':'B站','weibo':'微博'};
 
     function showToast(m,t){var el=document.getElementById('toast');el.textContent=m;el.className='toast '+t+' show';clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},2500)}
 
-    async function loadData(){
-      if(!supabaseReady) return;
-      var vRes=await window._supabase.from('videos').select('*');
-      if(vRes.data) appData.videos = vRes.data;
-      var tRes=await window._supabase.from('daily_trends').select('*');
-      if(tRes.data) appData.daily_trends = tRes.data;
-      updateDataTime();
+    // ===== 数据加载 =====
+    async function loadAllData(){
+      try{
+        const [vRes, tRes, wRes] = await Promise.all([
+          supabase.from('videos').select('*'),
+          supabase.from('daily_trends').select('*'),
+          supabase.from('weekly_tasks').select('*')
+        ]);
+        if(vRes.data) appData.videos = vRes.data;
+        if(tRes.data) appData.dailyTrends = tRes.data;
+        if(wRes.data) appData.weeklyTasks = wRes.data;
+        updateDataTime();
+      }catch(e){console.error('数据加载失败',e)}
     }
 
     function updateDataTime(){var now=new Date();var el=document.getElementById('dataTime');if(el)el.textContent='更新于 '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');setTimeout(updateDataTime,60000)}
 
+    // ===== 登录 =====
     async function login(){
       var u=document.getElementById('usernameInput').value.trim();
       var pw=document.getElementById('passwordInput').value.trim();
       var err=document.getElementById('loginError');
       err.textContent='';
-
-      if(!supabaseReady) { err.textContent='系统正在初始化，请稍后再试...'; return; }
-
-      try {
-        var res = await window._supabase.from('users').select('*').eq('username',u).eq('password',pw).single();
+      if(!supabase){err.textContent='系统初始化中...';return}
+      try{
+        var res = await supabase.from('users').select('*').eq('username',u).eq('password',pw).single();
         if(res.data){
           currentUser=res.data;
           sessionStorage.setItem('loggedInUser',u);
-          await loadData();
+          await loadAllData();
           enterDashboard();
         }else{
           err.textContent='账号或密码错误';
         }
-      } catch(e) {
-        console.error(e);
-        err.textContent='登录失败：网络异常或数据库未连接';
-      }
+      }catch(e){err.textContent='登录失败：网络异常'}
     }
 
     function enterDashboard(){
@@ -252,9 +276,10 @@
       if(o!==currentUser.password){e.textContent='当前密码错误';return}
       if(n.length<3){e.textContent='新密码至少3位';return}
       if(n!==c){e.textContent='两次不一致';return}
-      var res=await window._supabase.from('users').update({password:n}).eq('id',currentUser.id);
-      if(!res.error){currentUser.password=n;showToast('密码修改成功','success');closePasswordModal()}
-      else showToast('修改失败','error')
+      await supabase.from('users').update({password:n}).eq('id',currentUser.id);
+      currentUser.password=n;
+      showToast('密码修改成功','success');
+      closePasswordModal();
     }
 
     function showChangePassword(){document.getElementById('passwordModal').classList.add('show')}
@@ -262,28 +287,54 @@
     function toggleUserDropdown(){document.getElementById('userDropdown').classList.toggle('show')}
     addEventListener('click',function(e){if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-dropdown'))document.getElementById('userDropdown').classList.remove('show')})
 
+    // ===== 导航 =====
+    function toggleNav(el,group){
+      var sub=document.getElementById('sub-'+group),arrow=el.querySelector('.arrow');
+      if(sub){sub.classList.toggle('show');if(arrow)arrow.classList.toggle('open')}
+      else switchPage(el.dataset.page)
+    }
+
     function switchPage(page){
-      document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+      document.querySelectorAll('.nav-item,.sub-item').forEach(n=>n.classList.remove('active'));
       var t=document.querySelector('[data-page="'+page+'"]');if(t)t.classList.add('active');
-      var mc=document.getElementById('pageContent');
-      if(page==='dashboard'){document.getElementById('breadcrumb').innerHTML='📊 <span>数据大盘</span>';renderDashboard(mc)}
-      else if(page==='videos'){document.getElementById('breadcrumb').innerHTML='🎬 <span>视频管理</span>';renderVideos(mc)}
-      else if(page==='maintain'){document.getElementById('breadcrumb').innerHTML='🔧 <span>数据维护</span>';renderMaintain(mc)}
+      var mc=document.getElementById('pageContent'),bc=document.getElementById('breadcrumb');
+      if(page==='dashboard'){bc.innerHTML='📊 <span>数据大盘</span>';renderDashboard(mc)}
+      else if(page==='content-plan'){bc.innerHTML='🎬 内容管理 / <span>发布计划</span>';renderContentPlan(mc)}
+      else if(page==='content-list'){bc.innerHTML='🎬 内容管理 / <span>视频列表</span>';renderContentList(mc)}
+      else if(page==='content-add'){bc.innerHTML='🎬 内容管理 / <span>添加视频</span>';renderContentAdd(mc)}
+      else if(page==='schedule-chuangyi'){bc.innerHTML='📅 排期计划 / <span>创艺装饰</span>';renderSchedule(mc,'创艺装饰')}
+      else if(page==='schedule-xikexi'){bc.innerHTML='📅 排期计划 / <span>喜客喜装饰</span>';renderSchedule(mc,'喜客喜装饰')}
+      else if(page==='analysis-chuangyi'){bc.innerHTML='📈 品牌分析 / <span>创艺装饰</span>';renderAnalysis(mc,'创艺装饰')}
+      else if(page==='analysis-xikexi'){bc.innerHTML='📈 品牌分析 / <span>喜客喜装饰</span>';renderAnalysis(mc,'喜客喜装饰')}
+      else if(page.startsWith('maintain-')){
+        var key=page.replace('maintain-','');
+        var pl=PLATFORM_PAGE_MAP[key]||key;
+        bc.innerHTML='🔧 数据维护 / <span>'+pl+'</span>';
+        renderMaintain(mc,pl);
+      }
     }
 
     function formatNum(n){if(n>=10000)return (n/10000).toFixed(1)+'w';if(n>=1000)return (n/1000).toFixed(1)+'k';return n.toString()}
-    function getBrandData(b){return (appData.videos||[]).filter(function(v){return v.brand===b})}
-    function sumPlatform(vids,key){var s=0;vids.forEach(function(v){var p=v.platforms||{};PLATFORMS.forEach(function(pl){s+=(p[pl]?.[key]||0)})});return s}
+    function getBrandData(b){return (appData.videos||[]).filter(v=>v.brand===b)}
+    function sumPlatform(vids,key){var s=0;vids.forEach(v=>{var p=v.platforms||{};PLATFORMS.forEach(pl=>{s+=(p[pl]?.[key]||0)})});return s}
+    function platformTotal(vids,plat,key){return vids.reduce((s,v)=>{var p=v.platforms||{};return s+(p[plat]?.[key]||0)},0)}
 
+    // ===== 数据大盘 =====
     function renderDashboard(mc){
       var cy=getBrandData('创艺装饰'),xk=getBrandData('喜客喜装饰');
-      var cyPub=cy.filter(function(v){return v.status==='已发布'}),xkPub=xk.filter(function(v){return v.status==='已发布'});
+      var cyPub=cy.filter(v=>v.status==='已发布'),xkPub=xk.filter(v=>v.status==='已发布');
       var cyViews=sumPlatform(cyPub,'views'),xkViews=sumPlatform(xkPub,'views');
       var totalPub=cyPub.length+xkPub.length,totalPlan=cy.length+xk.length;
-      var platData=PLATFORMS.map(function(p){return{name:p,views:sumPlatform(cyPub.concat(xkPub),'views')}});
-      var maxView=Math.max.apply(null,platData.map(function(x){return x.views}))||1;
+      var platData=PLATFORMS.map(p=>({name:p,views:platformTotal(cyPub.concat(xkPub),p,'views')}));
+      var maxView=Math.max(...platData.map(x=>x.views),1);
+      var weeks=appData.weeklyTasks||[];
+      var trends=appData.dailyTrends||{};
+      var cyTrend=trends.filter(d=>d.brand==='创艺装饰'),xkTrend=trends.filter(d=>d.brand==='喜客喜装饰');
+      var allDates=[...new Set(cyTrend.concat(xkTrend).map(d=>d.date))].sort().slice(-30);
+      var statusCount={};appData.videos.forEach(v=>{statusCount[v.status]=(statusCount[v.status]||0)+1});
+      var statusData=Object.entries(statusCount).map(([n,v])=>({name:n,value:v}));
       var today=new Date();var todayStr=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
-      var todayVideos=(appData.videos||[]).filter(function(v){return v.planned_date===todayStr&&v.status!=='已发布'});
+      var todayVideos=appData.videos.filter(v=>v.planned_date===todayStr&&v.status!=='已发布');
 
       mc.innerHTML=
         '<div class="kpi-row">'+
@@ -293,51 +344,99 @@
           '<div class="kpi-card"><div class="label">📋 今日待处理</div><div class="value">'+todayVideos.length+'</div><div class="sub">条视频待拍摄/剪辑/发布</div></div>'+
         '</div>'+
         '<div class="grid-2">'+
-          '<div class="card"><h3>各平台播放量对比</h3>'+platData.map(function(p){return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="width:55px;font-size:12px;color:#64748b;">'+p.name+'</span><div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;"><div style="height:100%;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:4px;width:'+Math.round(p.views/maxView*100)+'%"></div></div><span style="font-size:12px;color:#334155;">'+formatNum(p.views)+'</span></div>'}).join('')+'</div>'+
-          '<div class="card"><h3>📋 今日待办</h3>'+(todayVideos.length===0?'<p style="color:#94a3b8;">今天没有待处理任务 ✅</p>':'<ul>'+todayVideos.map(function(v){return '<li style="padding:8px 12px;border-radius:8px;margin-bottom:6px;background:#f8fafc;">'+v.brand+' · '+v.title+' <span style="color:#94a3b8;">'+v.planned_time+'</span></li>'}).join('')+'</ul>')+'</div>'+
+          '<div class="card"><h3>近30天播放趋势</h3><div id="trendChart" class="chart-box"></div></div>'+
+          '<div class="card"><h3>视频状态分布</h3><div id="statusChart" class="chart-box"></div></div>'+
+        '</div>'+
+        '<div class="grid-2">'+
+          '<div class="card"><h3>各平台播放量对比</h3>'+platData.map(p=>'<div class="platform-bar"><span class="name">'+p.name+'</span><div class="bar"><div class="fill" style="width:'+Math.round(p.views/maxView*100)+'%"></div></div><span style="font-size:12px;color:#334155;">'+formatNum(p.views)+'</span></div>').join('')+'</div>'+
+          '<div class="card"><h3>每周执行汇总</h3><div id="weekBarChart" class="chart-box"></div></div>'+
         '</div>';
+      setTimeout(()=>{
+        var tc=document.getElementById('trendChart');if(tc)echarts.init(tc).setOption({tooltip:{trigger:'axis'},legend:{data:['创艺装饰','喜客喜装饰']},xAxis:{type:'category',data:allDates,axisLabel:{rotate:30,fontSize:10}},yAxis:{type:'value'},series:[{name:'创艺装饰',type:'line',data:allDates.map(d=>(cyTrend.find(t=>t.date===d)||{}).views),smooth:true,color:'#3b82f6'},{name:'喜客喜装饰',type:'line',data:allDates.map(d=>(xkTrend.find(t=>t.date===d)||{}).views),smooth:true,color:'#f59e0b'}]});
+        var sc=document.getElementById('statusChart');if(sc)echarts.init(sc).setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['50%','75%'],data:statusData}]});
+        var wc=document.getElementById('weekBarChart');if(wc)echarts.init(wc).setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:weeks.map(w=>w.week),axisLabel:{rotate:15,fontSize:10}},yAxis:{type:'value'},series:[{name:'出片',type:'bar',data:weeks.map(w=>w.output),color:'#3b82f6'},{name:'拍摄',type:'bar',data:weeks.map(w=>w.shoot),color:'#f59e0b'}]});
+      },150);
     }
 
-    function renderVideos(mc){
+    // ===== 内容管理 =====
+    function renderContentPlan(mc){
       var vids=appData.videos||[];
-      mc.innerHTML='<div class="card"><h3>全部视频列表</h3><table><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th></tr>'+vids.map(function(v){var tv=sumPlatform([v],'views');return '<tr><td>'+v.id+'</td><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td><td>'+formatNum(tv)+'</td></tr>'}).join('')+'</table></div>';
+      mc.innerHTML='<div class="card"><h3>视频发布计划</h3><table><tr><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>时间</th><th>状态</th></tr>'+vids.map(v=>'<tr><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td>'+v.planned_time+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td></tr>').join('')+'</table></div>';
+    }
+    function renderContentList(mc){
+      var vids=appData.videos||[];
+      mc.innerHTML='<div class="card"><h3>全部视频列表</h3><table><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th></tr>'+vids.map(v=>{var tv=sumPlatform([v],'views');return '<tr><td>'+v.id+'</td><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td><td>'+formatNum(tv)+'</td></tr>'}).join('')+'</table></div>';
+    }
+    function renderContentAdd(mc){mc.innerHTML='<div class="card"><h3>添加视频（即将支持）</h3></div>'}
+
+    // ===== 排期计划 =====
+    function renderSchedule(mc,brand){
+      var weeks=appData.weeklyTasks||[];
+      mc.innerHTML='<div class="card"><h3>'+brand+' · 周计划详情</h3><div class="week-tabs" id="weekTabBar"></div><table id="weekDetailTable"><tr><th>日期</th><th>动作</th><th>任务</th></tr></table></div>';
+      window._renderWeek=function(i){
+        document.getElementById('weekTabBar').innerHTML=weeks.map((w,j)=>'<div class="week-tab '+(j===i?'active':'')+'" onclick="window._renderWeek('+j+')">'+w.week.split(' ')[0]+'</div>').join('');
+        var cur=weeks[i];if(!cur)return;
+        document.querySelector('#weekDetailTable tbody').innerHTML=(cur.tasks||[]).map(t=>{
+          var cls='';if(t.tag==='拍摄')cls='shoot';else if(t.tag==='剪辑'||t.tag==='定稿'||t.tag==='审核')cls='edit';else if(t.tag==='发布')cls='publish';else cls='other';
+          return '<tr><td>'+t.day+'</td><td><span class="task-tag '+cls+'">'+t.action+'</span></td><td>'+t.detail+'</td></tr>'
+        }).join('');
+      };
+      window._renderWeek(0);
     }
 
-    function renderMaintain(mc){
-      var vids=appData.videos||[];
-      mc.innerHTML='<div class="card"><h3>数据维护</h3><p style="color:#64748b;margin-bottom:16px;">修改数据后点击提交，直接保存到数据库。</p>'+vids.map(function(v,i){var p=v.platforms||{};return '<div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:10px;"><div style="font-weight:500;margin-bottom:6px;">'+v.brand+' · '+v.title+'</div>'+PLATFORMS.map(function(pl){var d=p[pl]||{};return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;"><span style="width:50px;font-size:12px;">'+pl+'</span><input type="number" id="v'+i+'_'+pl+'_views" value="'+(d.views||0)+'" placeholder="播放" style="width:80px;font-size:12px;"><input type="number" id="v'+i+'_'+pl+'_likes" value="'+(d.likes||0)+'" placeholder="点赞" style="width:70px;font-size:12px;"><input type="number" id="v'+i+'_'+pl+'_comments" value="'+(d.comments||0)+'" placeholder="评论" style="width:70px;font-size:12px;"></div>'}).join('')+'</div>'}).join('')+'<button class="btn btn-primary" onclick="submitData()">💾 提交到数据库</button></div>';
+    // ===== 品牌分析 =====
+    function renderAnalysis(mc,brand){
+      var vids=getBrandData(brand);
+      var typeCount={};vids.forEach(v=>typeCount[v.type]=(typeCount[v.type]||0)+1);
+      var treeData={name:brand,children:Object.entries(typeCount).map(([t,c])=>({name:t,children:vids.filter(v=>v.type===t).map(v=>({name:v.title}))}))};
+      var platData=PLATFORMS.map(p=>({name:p,views:platformTotal(vids,p,'views')}));
+      var maxV=Math.max(...platData.map(x=>x.views),1);
+      var cyVids=getBrandData('创艺装饰'),xkAllVids=getBrandData('喜客喜装饰');
+      var radarIndicator=PLATFORMS.map(p=>({name:p,max:Math.max(platformTotal(cyVids,p,'views'),platformTotal(xkAllVids,p,'views'))||1}));
+      var cyRadar={name:'创艺装饰',value:PLATFORMS.map(p=>platformTotal(cyVids,p,'views')),lineStyle:{color:'#3b82f6'}};
+      var xkRadar={name:'喜客喜装饰',value:PLATFORMS.map(p=>platformTotal(xkAllVids,p,'views')),lineStyle:{color:'#f59e0b'}};
+      mc.innerHTML=
+        '<div class="grid-2">'+
+          '<div class="card"><h3>'+brand+' · 类型树状图</h3><div id="treeChart" class="chart-box"></div></div>'+
+          '<div class="card"><h3>品牌对比 · 播放量雷达</h3><div id="radarChart" class="chart-box"></div></div>'+
+        '</div>'+
+        '<div class="card"><h3>各平台播放量</h3>'+platData.map(p=>'<div class="platform-bar"><span class="name">'+p.name+'</span><div class="bar"><div class="fill" style="width:'+Math.round(p.views/maxV*100)+'%"></div></div><span style="font-size:12px;">'+formatNum(p.views)+'</span></div>').join('')+'</div>';
+      setTimeout(()=>{
+        var tc=document.getElementById('treeChart');if(tc)echarts.init(tc).setOption({tooltip:{trigger:'item'},series:[{type:'tree',data:[treeData],top:'5%',left:'8%',bottom:'5%',right:'12%',symbolSize:7,orient:'LR',expandAndCollapse:true}]});
+        var rc=document.getElementById('radarChart');if(rc)echarts.init(rc).setOption({radar:{indicator:radarIndicator},series:[{type:'radar',data:[cyRadar,xkRadar]}]});
+      },150);
     }
 
-    async function submitData(){
+    // ===== 数据维护 =====
+    function renderMaintain(mc,platform){
       var vids=appData.videos||[];
+      mc.innerHTML='<div class="card"><h3>'+platform+' · 数据维护</h3>'+vids.map((v,i)=>{var d=v.platforms?.[platform]||{};return '<div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:10px;"><b>'+v.brand+' · '+v.title+'</b><div style="display:flex;gap:10px;margin-top:6px;">播放 <input type="number" id="v'+i+'_views" value="'+(d.views||0)+'" style="width:90px;"> 点赞 <input type="number" id="v'+i+'_likes" value="'+(d.likes||0)+'" style="width:90px;"> 评论 <input type="number" id="v'+i+'_comments" value="'+(d.comments||0)+'" style="width:90px;"> 已发布 <input type="checkbox" id="v'+i+'_pub" '+(d.published?'checked':'')+'></div></div>'}).join('')+'<button class="btn btn-primary" onclick="submitPlatform(\''+platform+'\')">提交数据</button></div>';
+    }
+
+    async function submitPlatform(platform){
+      var vids=appData.videos;
       for(var i=0;i<vids.length;i++){
-        var platforms={};
-        PLATFORMS.forEach(function(pl){
-          platforms[pl]={
-            published:false,
-            views:parseInt(document.getElementById('v'+i+'_'+pl+'_views')?.value)||0,
-            likes:parseInt(document.getElementById('v'+i+'_'+pl+'_likes')?.value)||0,
-            comments:parseInt(document.getElementById('v'+i+'_'+pl+'_comments')?.value)||0
-          };
-        });
-        await window._supabase.from('videos').update({platforms:platforms}).eq('id',vids[i].id);
+        var platforms=vids[i].platforms||{};
+        platforms[platform]={
+          published:document.getElementById('v'+i+'_pub').checked,
+          views:parseInt(document.getElementById('v'+i+'_views').value)||0,
+          likes:parseInt(document.getElementById('v'+i+'_likes').value)||0,
+          comments:parseInt(document.getElementById('v'+i+'_comments').value)||0
+        };
+        await supabase.from('videos').update({platforms:platforms}).eq('id',vids[i].id);
       }
-      await loadData();
-      showToast('✅ 数据已保存到数据库！','success');
+      await loadAllData();
+      showToast('✅ 数据已提交','success');
       switchPage('dashboard');
     }
 
-    // ===== 自动登录检查（等待 Supabase 就绪） =====
-    function checkAutoLogin(){
-      if(!supabaseReady){setTimeout(checkAutoLogin,300);return}
-      var savedUser=sessionStorage.getItem('loggedInUser');
-      if(savedUser){
-        window._supabase.from('users').select('*').eq('username',savedUser).single().then(function(res){
-          if(res.data){currentUser=res.data;loadData().then(function(){enterDashboard()})}
-        });
-      }
+    // 自动登录检查
+    var savedUser=sessionStorage.getItem('loggedInUser');
+    if(savedUser){
+      supabase.from('users').select('*').eq('username',savedUser).single().then(async res=>{
+        if(res.data){currentUser=res.data;await loadAllData();enterDashboard()}
+      });
     }
-    setTimeout(checkAutoLogin,500);
   </script>
 </body>
 </html>
