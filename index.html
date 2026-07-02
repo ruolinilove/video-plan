@@ -96,12 +96,16 @@
     .modal{background:#fff;border-radius:20px;padding:30px;width:420px;box-shadow:0 30px 60px rgba(0,0,0,0.15)}
     .form-group{margin-bottom:18px}
     .form-group label{display:block;font-size:13px;color:#334155;margin-bottom:6px;font-weight:500}
-    .form-group input,.form-group select{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:0}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;outline:0}
     .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-    .flex-row{display:flex;gap:10px;align-items:center}
-    .type-tree-box{height:400px}
+    .drawer-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);z-index:150}
+    .drawer-overlay.show{display:block}
+    .drawer{position:fixed;top:0;right:0;width:520px;height:100%;background:#fff;z-index:151;box-shadow:-10px 0 40px rgba(0,0,0,0.1);padding:24px;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s ease}
+    .drawer.show{transform:translateX(0)}
+    .drawer-close{position:absolute;top:16px;right:16px;font-size:20px;cursor:pointer;color:#64748b}
+    .filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+    .filter-bar select,.filter-bar input{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:0;background:#fff}
     .json-output{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:12px;font-family:monospace;font-size:13px;white-space:pre-wrap;max-height:400px;overflow-y:auto;margin-top:12px}
-    .recent-list li{padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between}
   </style>
 </head>
 <body>
@@ -121,45 +125,10 @@
   <div class="toast" id="toast"></div>
 
   <div id="appContainer" class="app-container">
-    <div class="sidebar">
-      <div class="sidebar-logo"><span></span>数据中心</div>
-      <div class="nav-item active" data-page="dashboard" onclick="toggleNav(this,'dashboard')"><div class="left">📊 数据大盘</div></div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="content" onclick="toggleNav(this,'content')"><div class="left">🎬 内容管理</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-content">
-          <div class="sub-item active" data-page="content-plan" onclick="switchPage('content-plan')">发布计划</div>
-          <div class="sub-item" data-page="content-list" onclick="switchPage('content-list')">视频列表</div>
-          <div class="sub-item" data-page="content-add" onclick="switchPage('content-add')">添加视频</div>
-        </div>
-      </div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="schedule" onclick="toggleNav(this,'schedule')"><div class="left">📅 排期计划</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-schedule">
-          <div class="sub-item" data-page="schedule-chuangyi" onclick="switchPage('schedule-chuangyi')">创艺装饰</div>
-          <div class="sub-item" data-page="schedule-xikexi" onclick="switchPage('schedule-xikexi')">喜客喜装饰</div>
-        </div>
-      </div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="analysis" onclick="toggleNav(this,'analysis')"><div class="left">📈 品牌分析</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-analysis">
-          <div class="sub-item" data-page="analysis-chuangyi" onclick="switchPage('analysis-chuangyi')">创艺装饰</div>
-          <div class="sub-item" data-page="analysis-xikexi" onclick="switchPage('analysis-xikexi')">喜客喜装饰</div>
-        </div>
-      </div>
-      <div class="nav-group">
-        <div class="nav-item" data-page="maintain" onclick="toggleNav(this,'maintain')"><div class="left">🔧 数据维护</div><span class="arrow">▶</span></div>
-        <div class="sub-nav" id="sub-maintain">
-          <div class="sub-item" data-page="maintain-wechat" onclick="switchPage('maintain-wechat')">视频号</div>
-          <div class="sub-item" data-page="maintain-kuaishou" onclick="switchPage('maintain-kuaishou')">快手</div>
-          <div class="sub-item" data-page="maintain-douyin" onclick="switchPage('maintain-douyin')">抖音</div>
-          <div class="sub-item" data-page="maintain-bilibili" onclick="switchPage('maintain-bilibili')">B站</div>
-          <div class="sub-item" data-page="maintain-weibo" onclick="switchPage('maintain-weibo')">微博</div>
-        </div>
-      </div>
-    </div>
+    <div class="sidebar" id="sidebar"></div>
     <div class="main-content">
       <div class="top-bar">
-        <div class="top-bar-left"><div class="breadcrumb" id="breadcrumb">📊 <span>数据大盘</span></div></div>
+        <div class="top-bar-left"><div class="breadcrumb" id="breadcrumb"></div></div>
         <div class="top-bar-right">
           <span class="data-time" id="dataTime"></span>
           <div class="user-avatar" id="userAvatar" onclick="toggleUserDropdown()">A</div>
@@ -173,6 +142,9 @@
     </div>
   </div>
 
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer"></div>
+
   <div class="modal-overlay" id="passwordModal">
     <div class="modal">
       <h3>修改密码</h3>
@@ -184,8 +156,8 @@
     </div>
   </div>
 
-  <!-- 粒子特效 -->
   <script>
+    // ===== 粒子特效 =====
     (function(){
       var c=document.getElementById('particleCanvas'),ctx=c.getContext('2d'),p=[],w,h,mx=-500,my=-500;
       function rs(){w=c.width=innerWidth;h=c.height=innerHeight}
@@ -203,310 +175,423 @@
       }dr();
     })();
     addEventListener('mousemove',function(e){var b=document.getElementById('loginBox');if(!b||b.offsetParent===null)return;var cx=innerWidth/2,cy=innerHeight/2;b.style.transform='translate('+((e.clientX-cx)/cx*4)+'px,'+((e.clientY-cy)/cy*4)+'px)'});
-  </script>
 
-  <!-- 主逻辑 -->
-  <script>
+    // ===== 全局变量 =====
     let appData = null;
     let currentUser = null;
     const PLATFORMS = ['视频号','快手','抖音','B站','微博'];
     const PLATFORM_PAGE_MAP = {'wechat':'视频号','kuaishou':'快手','douyin':'抖音','bilibili':'B站','weibo':'微博'};
+    let currentPage = 'dashboard';
 
-    fetch('data.json').then(r=>r.json()).then(d=>{appData=d;updateDataTime();autoLogin();}).catch(e=>console.error(e));
+    // ===== 导航结构定义 =====
+    const NAV_STRUCTURE = [
+      { id: 'dashboard', label: '📊 数据大盘', icon: '', children: [] },
+      { id: 'brand', label: '📊 品牌数据', icon: '', children: [
+        { id: 'brand-chuangyi-analysis', label: '创艺装饰', children: [
+          { id: 'brand-chuangyi-analysis', label: '数据分析', children: [] }
+        ]},
+        { id: 'brand-xikexi-analysis', label: '喜客喜装饰', children: [
+          { id: 'brand-xikexi-analysis', label: '数据分析', children: [] }
+        ]}
+      ]},
+      { id: 'content', label: '🎬 内容生产', icon: '', children: [
+        { id: 'content-shoot', label: '拍摄任务', children: [] },
+        { id: 'content-edit', label: '剪辑任务', children: [] },
+        { id: 'content-copy', label: '文案任务', children: [] },
+        { id: 'content-idea', label: '灵感/选题库', children: [] }
+      ]},
+      { id: 'summary', label: '📝 工作总结', icon: '', children: [
+        { id: 'summary-month-plan', label: '月度视频规划', children: [] },
+        { id: 'summary-week-plan', label: '周执行计划', children: [] },
+        { id: 'summary-week', label: '周总结', children: [] },
+        { id: 'summary-month', label: '月总结', children: [] },
+        { id: 'summary-year', label: '年总结', children: [] }
+      ]},
+      { id: 'maintain', label: '🔧 数据维护', icon: '', children: [
+        { id: 'maintain-wechat', label: '视频号', children: [] },
+        { id: 'maintain-kuaishou', label: '快手', children: [] },
+        { id: 'maintain-douyin', label: '抖音', children: [] },
+        { id: 'maintain-bilibili', label: 'B站', children: [] },
+        { id: 'maintain-weibo', label: '微博', children: [] }
+      ]},
+      { id: 'fun', label: '🎮 放松小站', icon: '', children: [
+        { id: 'fun-touch', label: '今日摸鱼', children: [] },
+        { id: 'fun-pixel', label: '像素画板', children: [] },
+        { id: 'fun-plant', label: '虚拟盆栽', children: [] },
+        { id: 'fun-mood', label: '心情日记', children: [] }
+      ]}
+    ];
 
-    function updateDataTime(){
-      var now=new Date();
-      var el=document.getElementById('dataTime');
-      if(el)el.textContent='更新于 '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-      setTimeout(updateDataTime,60000);
+    // ===== 渲染侧边栏 =====
+    function renderSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      let html = '<div class="sidebar-logo"><span></span>数据中心</div>';
+      NAV_STRUCTURE.forEach(item => {
+        const hasChildren = item.children && item.children.length > 0;
+        html += `<div class="nav-item" data-page="${item.id}" onclick="${hasChildren ? `toggleNav(this,'${item.id}')` : `switchPage('${item.id}')`}">
+          <div class="left">${item.label}</div>
+          ${hasChildren ? '<span class="arrow">▶</span>' : ''}
+        </div>`;
+        if (hasChildren) {
+          html += `<div class="sub-nav" id="sub-${item.id}">`;
+          item.children.forEach(child => {
+            const hasSubChildren = child.children && child.children.length > 0;
+            html += `<div class="sub-item" data-page="${child.id}" onclick="${hasSubChildren ? `toggleNav(this,'${child.id}')` : `switchPage('${child.id}')`}">
+              ${child.label}
+              ${hasSubChildren ? ' <span class="arrow">▶</span>' : ''}
+            </div>`;
+            if (hasSubChildren) {
+              html += `<div class="sub-nav" id="sub-${child.id}">`;
+              child.children.forEach(sub => {
+                html += `<div class="sub-item" data-page="${sub.id}" onclick="switchPage('${sub.id}')">${sub.label}</div>`;
+              });
+              html += '</div>';
+            }
+          });
+          html += '</div>';
+        }
+      });
+      sidebar.innerHTML = html;
     }
 
-    function showToast(m,t){
-      var el=document.getElementById('toast');
-      el.textContent=m;el.className='toast '+t+' show';
-      clearTimeout(el._t);el._t=setTimeout(function(){el.className='toast'},2500);
+    function toggleNav(el, group) {
+      const sub = document.getElementById('sub-' + group);
+      const arrow = el.querySelector('.arrow');
+      if (sub) {
+        sub.classList.toggle('show');
+        if (arrow) arrow.classList.toggle('open');
+      } else {
+        switchPage(el.dataset.page);
+      }
     }
 
-    function login(){
-      if(!appData){document.getElementById('loginError').textContent='数据加载中...';return}
-      var u=document.getElementById('usernameInput').value.trim();
-      var pw=document.getElementById('passwordInput').value.trim();
-      var err=document.getElementById('loginError');
-      var user=(appData.users||[]).find(x=>x.username===u&&x.password===pw);
-      if(user){currentUser=user;sessionStorage.setItem('loggedInUser',u);enterDashboard();}
-      else err.textContent='账号或密码错误';
+    // ===== 数据加载 =====
+    fetch('data.json').then(r => r.json()).then(d => {
+      appData = d;
+      updateDataTime();
+      autoLogin();
+    }).catch(e => console.error('JSON加载失败', e));
+
+    function updateDataTime() {
+      const now = new Date();
+      const el = document.getElementById('dataTime');
+      if (el) el.textContent = '更新于 ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+      setTimeout(updateDataTime, 60000);
     }
 
-    function enterDashboard(){
-      document.getElementById('loginPage').style.display='none';
-      document.getElementById('loginBg').style.display='none';
-      document.getElementById('particleCanvas').style.display='none';
-      document.getElementById('appContainer').style.display='block';
-      document.getElementById('userAvatar').textContent=currentUser.username[0].toUpperCase();
+    function showToast(m, t) {
+      const el = document.getElementById('toast');
+      el.textContent = m; el.className = 'toast ' + t + ' show';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.className = 'toast'; }, 2500);
+    }
+
+    function login() {
+      if (!appData) { document.getElementById('loginError').textContent = '数据加载中...'; return; }
+      const u = document.getElementById('usernameInput').value.trim();
+      const pw = document.getElementById('passwordInput').value.trim();
+      const user = (appData.users || []).find(x => x.username === u && x.password === pw);
+      if (user) {
+        currentUser = user;
+        sessionStorage.setItem('loggedInUser', u);
+        enterDashboard();
+      } else {
+        document.getElementById('loginError').textContent = '账号或密码错误';
+      }
+    }
+
+    function enterDashboard() {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('loginBg').style.display = 'none';
+      document.getElementById('particleCanvas').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+      document.getElementById('userAvatar').textContent = currentUser.username[0].toUpperCase();
+      renderSidebar();
       switchPage('dashboard');
     }
 
-    function logout(){
+    function logout() {
       sessionStorage.removeItem('loggedInUser');
-      document.getElementById('appContainer').style.display='none';
-      document.getElementById('loginPage').style.display='flex';
-      document.getElementById('loginBg').style.display='block';
-      document.getElementById('particleCanvas').style.display='block';
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginPage').style.display = 'flex';
+      document.getElementById('loginBg').style.display = 'block';
+      document.getElementById('particleCanvas').style.display = 'block';
     }
 
-    function changePassword(){
-      var o=document.getElementById('oldPassword').value.trim();
-      var n=document.getElementById('newPassword').value.trim();
-      var c=document.getElementById('confirmPassword').value.trim();
-      var e=document.getElementById('passwordError');
-      if(o!==currentUser.password){e.textContent='当前密码错误';return}
-      if(n.length<3){e.textContent='新密码至少3位';return}
-      if(n!==c){e.textContent='两次不一致';return}
-      currentUser.password=n;
-      var user=appData.users.find(x=>x.username===currentUser.username);
-      if(user)user.password=n;
-      showToast('密码已修改（本地生效，请手动更新JSON文件）','success');
+    function autoLogin() {
+      const savedUser = sessionStorage.getItem('loggedInUser');
+      if (savedUser && appData) {
+        const user = (appData.users || []).find(x => x.username === savedUser);
+        if (user) { currentUser = user; enterDashboard(); }
+      }
+    }
+
+    function toggleUserDropdown() { document.getElementById('userDropdown').classList.toggle('show'); }
+    addEventListener('click', function(e) {
+      if (!e.target.closest('.user-avatar') && !e.target.closest('.user-dropdown'))
+        document.getElementById('userDropdown').classList.remove('show');
+    });
+
+    function showChangePassword() { document.getElementById('passwordModal').classList.add('show'); }
+    function closePasswordModal() { document.getElementById('passwordModal').classList.remove('show'); }
+    function changePassword() {
+      const o = document.getElementById('oldPassword').value.trim();
+      const n = document.getElementById('newPassword').value.trim();
+      const c = document.getElementById('confirmPassword').value.trim();
+      const e = document.getElementById('passwordError');
+      if (o !== currentUser.password) { e.textContent = '当前密码错误'; return; }
+      if (n.length < 3) { e.textContent = '新密码至少3位'; return; }
+      if (n !== c) { e.textContent = '两次不一致'; return; }
+      currentUser.password = n;
+      const user = appData.users.find(x => x.username === currentUser.username);
+      if (user) user.password = n;
+      showToast('密码已修改（本地生效，请手动更新JSON）', 'success');
       closePasswordModal();
     }
 
-    function showChangePassword(){document.getElementById('passwordModal').classList.add('show')}
-    function closePasswordModal(){document.getElementById('passwordModal').classList.remove('show')}
-    function toggleUserDropdown(){document.getElementById('userDropdown').classList.toggle('show')}
-    addEventListener('click',function(e){if(!e.target.closest('.user-avatar')&&!e.target.closest('.user-dropdown'))document.getElementById('userDropdown').classList.remove('show')});
-
-    function autoLogin(){
-      var savedUser=sessionStorage.getItem('loggedInUser');
-      if(savedUser&&appData){
-        var user=(appData.users||[]).find(x=>x.username===savedUser);
-        if(user){currentUser=user;enterDashboard();}
+    // ===== 页面切换 =====
+    function switchPage(pageId) {
+      currentPage = pageId;
+      // 更新导航激活状态
+      document.querySelectorAll('.nav-item, .sub-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.querySelector(`[data-page="${pageId}"]`);
+      if (activeEl) activeEl.classList.add('active');
+      // 展开父级菜单
+      let parent = activeEl ? activeEl.closest('.sub-nav') : null;
+      while (parent) {
+        parent.classList.add('show');
+        const parentNavItem = parent.previousElementSibling;
+        if (parentNavItem && parentNavItem.classList.contains('nav-item')) {
+          const arrow = parentNavItem.querySelector('.arrow');
+          if (arrow) arrow.classList.add('open');
+        }
+        parent = parent.parentElement.closest('.sub-nav');
       }
+      // 渲染内容
+      const mc = document.getElementById('pageContent');
+      const bc = document.getElementById('breadcrumb');
+      bc.innerHTML = getBreadcrumb(pageId);
+      renderPage(pageId, mc);
     }
 
-    function toggleNav(el,group){
-      var sub=document.getElementById('sub-'+group);
-      var arrow=el.querySelector('.arrow');
-      if(sub){sub.classList.toggle('show');if(arrow)arrow.classList.toggle('open')}
-      else switchPage(el.dataset.page);
-    }
-
-    function switchPage(page){
-      document.querySelectorAll('.nav-item,.sub-item').forEach(n=>n.classList.remove('active'));
-      var t=document.querySelector('[data-page="'+page+'"]');if(t)t.classList.add('active');
-      var mc=document.getElementById('pageContent'),bc=document.getElementById('breadcrumb');
-      if(page==='dashboard'){bc.innerHTML='📊 <span>数据大盘</span>';renderDashboard(mc)}
-      else if(page==='content-plan'){bc.innerHTML='🎬 内容管理 / <span>发布计划</span>';renderContentPlan(mc)}
-      else if(page==='content-list'){bc.innerHTML='🎬 内容管理 / <span>视频列表</span>';renderContentList(mc)}
-      else if(page==='content-add'){bc.innerHTML='🎬 内容管理 / <span>添加视频</span>';renderContentAdd(mc)}
-      else if(page==='schedule-chuangyi'){bc.innerHTML='📅 排期计划 / <span>创艺装饰</span>';renderSchedule(mc,'创艺装饰')}
-      else if(page==='schedule-xikexi'){bc.innerHTML='📅 排期计划 / <span>喜客喜装饰</span>';renderSchedule(mc,'喜客喜装饰')}
-      else if(page==='analysis-chuangyi'){bc.innerHTML='📈 品牌分析 / <span>创艺装饰</span>';renderAnalysis(mc,'创艺装饰')}
-      else if(page==='analysis-xikexi'){bc.innerHTML='📈 品牌分析 / <span>喜客喜装饰</span>';renderAnalysis(mc,'喜客喜装饰')}
-      else if(page.startsWith('maintain-')){
-        var key=page.replace('maintain-','');
-        var pl=PLATFORM_PAGE_MAP[key]||key;
-        bc.innerHTML='🔧 数据维护 / <span>'+pl+'</span>';
-        renderMaintain(mc,pl);
-      }
-    }
-
-    function formatNum(n){if(n>=10000)return (n/10000).toFixed(1)+'w';if(n>=1000)return (n/1000).toFixed(1)+'k';return n.toString()}
-    function getBrandData(b){return (appData?.videos||[]).filter(v=>v.brand===b)}
-    function sumPlatform(vids,key){let s=0;vids.forEach(v=>{let p=v.platforms||{};PLATFORMS.forEach(pl=>{s+=(p[pl]?.[key]||0)})});return s}
-    function platformTotal(vids,plat,key){return vids.reduce((s,v)=>{let p=v.platforms||{};return s+(p[plat]?.[key]||0)},0)}
-
-    // ===== 数据大盘（增强版） =====
-    function renderDashboard(mc){
-      var cy=getBrandData('创艺装饰'),xk=getBrandData('喜客喜装饰');
-      var cyPub=cy.filter(v=>v.status==='已发布'),xkPub=xk.filter(v=>v.status==='已发布');
-      var cyViews=sumPlatform(cyPub,'views'),xkViews=sumPlatform(xkPub,'views');
-      var totalPub=cyPub.length+xkPub.length,totalPlan=cy.length+xk.length;
-      var platData=PLATFORMS.map(p=>({name:p,views:platformTotal(cyPub.concat(xkPub),p,'views')}));
-      var maxView=Math.max(...platData.map(x=>x.views),1);
-      var weeks=appData.weekly_tasks||[];
-      var trends=appData.daily_trends||[];
-      var cyTrend=trends.filter(d=>d.brand==='创艺装饰'),xkTrend=trends.filter(d=>d.brand==='喜客喜装饰');
-      var allDates=[...new Set(cyTrend.concat(xkTrend).map(d=>d.date))].sort().slice(-30);
-      var statusCount={};appData.videos.forEach(v=>{statusCount[v.status]=(statusCount[v.status]||0)+1});
-      var statusData=Object.entries(statusCount).map(([n,v])=>({name:n,value:v}));
-      var today=new Date();
-      var todayStr=today.getFullYear()+'-'+(today.getMonth()+1).toString().padStart(2,'0')+'-'+today.getDate().toString().padStart(2,'0');
-      var todayVideos=appData.videos.filter(v=>v.planned_date===todayStr&&v.status!=='已发布');
-      // 最近发布的5条视频
-      var recentVideos=[...appData.videos].filter(v=>v.status==='已发布').sort((a,b)=>b.planned_date.localeCompare(a.planned_date)).slice(0,5);
-
-      mc.innerHTML=
-        '<div class="kpi-row">'+
-          '<div class="kpi-card brand-card"><div class="label">🏠 创艺装饰 · 总播放</div><div class="value">'+formatNum(cyViews)+'</div><div class="sub">已发布 '+cyPub.length+' 条</div></div>'+
-          '<div class="kpi-card brand-card orange"><div class="label">🏡 喜客喜装饰 · 总播放</div><div class="value">'+formatNum(xkViews)+'</div><div class="sub">已发布 '+xkPub.length+' 条</div></div>'+
-          '<div class="kpi-card"><div class="label">📹 本月发布进度</div><div class="value">'+totalPub+'<span style="font-size:16px;color:#64748b;"> / '+totalPlan+'</span></div><div class="sub">完成率 '+(totalPlan>0?Math.round(totalPub/totalPlan*100):0)+'%</div></div>'+
-          '<div class="kpi-card"><div class="label">📋 今日待处理</div><div class="value">'+todayVideos.length+'</div><div class="sub">条视频待拍摄/剪辑/发布</div></div>'+
-        '</div>'+
-        '<div class="grid-2">'+
-          '<div class="card"><h3>近30天播放趋势</h3><div id="trendChart" class="chart-box"></div></div>'+
-          '<div class="card"><h3>视频状态分布</h3><div id="statusChart" class="chart-box"></div></div>'+
-        '</div>'+
-        '<div class="grid-2">'+
-          '<div class="card"><h3>各平台播放量对比</h3>'+platData.map(p=>'<div class="platform-bar"><span class="name">'+p.name+'</span><div class="bar"><div class="fill" style="width:'+Math.round(p.views/maxView*100)+'%"></div></div><span style="font-size:12px;color:#334155;">'+formatNum(p.views)+'</span></div>').join('')+'</div>'+
-          '<div class="card"><h3>每周执行汇总</h3><div id="weekBarChart" class="chart-box"></div></div>'+
-        '</div>'+
-        '<div class="card"><h3>最近发布视频</h3><table><tr><th>品牌</th><th>标题</th><th>日期</th><th>总播放</th></tr>'+recentVideos.map(v=>'<tr><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.planned_date+'</td><td>'+formatNum(sumPlatform([v],'views'))+'</td></tr>').join('')+'</table></div>'+
-      '';
-      setTimeout(()=>{
-        var tc=document.getElementById('trendChart');if(tc)echarts.init(tc).setOption({tooltip:{trigger:'axis'},legend:{data:['创艺装饰','喜客喜装饰']},xAxis:{type:'category',data:allDates,axisLabel:{rotate:30,fontSize:10}},yAxis:{type:'value'},series:[{name:'创艺装饰',type:'line',data:allDates.map(d=>(cyTrend.find(t=>t.date===d)||{}).views),smooth:true,color:'#3b82f6'},{name:'喜客喜装饰',type:'line',data:allDates.map(d=>(xkTrend.find(t=>t.date===d)||{}).views),smooth:true,color:'#f59e0b'}]});
-        var sc=document.getElementById('statusChart');if(sc)echarts.init(sc).setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['50%','75%'],data:statusData}]});
-        var wc=document.getElementById('weekBarChart');if(wc)echarts.init(wc).setOption({tooltip:{trigger:'axis'},xAxis:{type:'category',data:weeks.map(w=>w.week),axisLabel:{rotate:15,fontSize:10}},yAxis:{type:'value'},series:[{name:'出片',type:'bar',data:weeks.map(w=>w.output),color:'#3b82f6'},{name:'拍摄',type:'bar',data:weeks.map(w=>w.shoot),color:'#f59e0b'}]});
-      },150);
-    }
-
-    // ===== 发布计划（表格 + 树状图切换） =====
-    function renderContentPlan(mc){
-      var vids=appData.videos||[];
-      var brands=[...new Set(vids.map(v=>v.brand))];
-      var treeData=brands.map(b=>{
-        var bVids=vids.filter(v=>v.brand===b);
-        var types=[...new Set(bVids.map(v=>v.type))];
-        return {
-          name:b,
-          children:types.map(t=>({
-            name:t,
-            children:bVids.filter(v=>v.type===t).map(v=>({name:v.title+' ('+v.planned_date+')'}))
-          }))
-        };
-      });
-
-      mc.innerHTML=
-        '<div class="card"><h3>视频发布计划</h3>'+
-        '<div class="flex-row" style="margin-bottom:16px;"><button class="btn btn-secondary" onclick="document.getElementById(\'planTable\').style.display=\'\';document.getElementById(\'planTree\').style.display=\'none\';">📋 表格视图</button><button class="btn btn-secondary" onclick="document.getElementById(\'planTable\').style.display=\'none\';document.getElementById(\'planTree\').style.display=\'\';renderPlanTree()">🌳 树状图</button></div>'+
-        '<div id="planTable"><table><tr><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>时间</th><th>状态</th></tr>'+vids.map(v=>'<tr><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td>'+v.planned_time+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td></tr>').join('')+'</table></div>'+
-        '<div id="planTree" style="display:none;height:400px;"></div>'+
-        '</div>';
-      window._planTreeData = treeData;
-    }
-    function renderPlanTree(){
-      var treeDom=document.getElementById('planTree');
-      if(treeDom&&window._planTreeData){
-        var chart=echarts.init(treeDom);
-        chart.setOption({
-          tooltip:{trigger:'item',triggerOn:'mousemove'},
-          series:[{type:'tree',data:window._planTreeData,top:'5%',left:'10%',bottom:'5%',right:'15%',symbolSize:7,orient:'LR',label:{position:'right',verticalAlign:'middle',align:'left',fontSize:12},leaves:{label:{position:'right',verticalAlign:'middle',align:'left'}},expandAndCollapse:true}]
-        });
-      }
-    }
-
-    // ===== 视频列表 =====
-    function renderContentList(mc){
-      var vids=appData.videos||[];
-      mc.innerHTML='<div class="card"><h3>全部视频列表</h3><table><tr><th>ID</th><th>品牌</th><th>标题</th><th>类型</th><th>日期</th><th>状态</th><th>总播放</th></tr>'+vids.map(v=>{var tv=sumPlatform([v],'views');return '<tr><td>'+v.id+'</td><td>'+v.brand+'</td><td>'+v.title+'</td><td>'+v.type+'</td><td>'+v.planned_date+'</td><td><span class="status-tag '+(v.status==='已发布'?'published':v.status==='剪辑中'?'editing':v.status==='拍摄中'?'shooting':'pending')+'">'+v.status+'</span></td><td>'+formatNum(tv)+'</td></tr>'}).join('')+'</table></div>';
-    }
-
-    // ===== 添加视频（完善版） =====
-    function renderContentAdd(mc){
-      var types=appData.video_types||[];
-      var typeOptions=types.map(t=>'<option value="'+t+'">'+t+'</option>').join('');
-      mc.innerHTML=
-        '<div class="card"><h3>添加月度计划（新视频）</h3>'+
-        '<div class="form-group"><label>品牌</label><select id="addBrand"><option>创艺装饰</option><option>喜客喜装饰</option></select></div>'+
-        '<div class="form-group"><label>视频标题</label><input type="text" id="addTitle" placeholder="输入视频标题"></div>'+
-        '<div class="form-group"><label>视频类型</label><select id="addType">'+typeOptions+'</select><input type="text" id="addTypeCustom" placeholder="或输入新类型" style="margin-top:6px;"></div>'+
-        '<div class="form-group"><label>计划日期</label><input type="date" id="addDate" value="2026-07-01"></div>'+
-        '<div class="form-group"><label>计划时间</label><input type="time" id="addTime" value="10:00"></div>'+
-        '<button class="btn btn-primary" onclick="addNewVideo()">添加到计划</button>'+
-        '<div class="json-output" id="addOutput" style="display:none;"></div>'+
-        '</div>';
-    }
-
-    function addNewVideo(){
-      var brand=document.getElementById('addBrand').value;
-      var title=document.getElementById('addTitle').value.trim();
-      if(!title){showToast('请输入标题','error');return}
-      var typeSelect=document.getElementById('addType').value;
-      var typeCustom=document.getElementById('addTypeCustom').value.trim();
-      var type=typeCustom||typeSelect;
-      if(!type){showToast('请选择或输入类型','error');return}
-      var date=document.getElementById('addDate').value;
-      var time=document.getElementById('addTime').value;
-      var maxId=Math.max(...appData.videos.map(v=>v.id),0);
-      var newVideo={
-        id:maxId+1,
-        brand:brand,
-        title:title,
-        type:type,
-        planned_date:date,
-        planned_time:time,
-        status:'待拍摄',
-        platforms:{}
+    function getBreadcrumb(pageId) {
+      const map = {
+        'dashboard': '📊 数据大盘',
+        'brand-chuangyi-analysis': '📊 品牌数据 / 创艺装饰 / 数据分析',
+        'brand-xikexi-analysis': '📊 品牌数据 / 喜客喜装饰 / 数据分析',
+        'content-shoot': '🎬 内容生产 / 拍摄任务',
+        'content-edit': '🎬 内容生产 / 剪辑任务',
+        'content-copy': '🎬 内容生产 / 文案任务',
+        'content-idea': '🎬 内容生产 / 灵感/选题库',
+        'summary-month-plan': '📝 工作总结 / 月度视频规划',
+        'summary-week-plan': '📝 工作总结 / 周执行计划',
+        'summary-week': '📝 工作总结 / 周总结',
+        'summary-month': '📝 工作总结 / 月总结',
+        'summary-year': '📝 工作总结 / 年总结',
+        'maintain-wechat': '🔧 数据维护 / 视频号',
+        'maintain-kuaishou': '🔧 数据维护 / 快手',
+        'maintain-douyin': '🔧 数据维护 / 抖音',
+        'maintain-bilibili': '🔧 数据维护 / B站',
+        'maintain-weibo': '🔧 数据维护 / 微博',
+        'fun-touch': '🎮 放松小站 / 今日摸鱼',
+        'fun-pixel': '🎮 放松小站 / 像素画板',
+        'fun-plant': '🎮 放松小站 / 虚拟盆栽',
+        'fun-mood': '🎮 放松小站 / 心情日记'
       };
-      PLATFORMS.forEach(p=>{newVideo.platforms[p]={published:false,publish_time:null,views:0,likes:0,comments:0,shares:0}});
-      appData.videos.push(newVideo);
-      // 更新类型列表
-      if(!appData.video_types.includes(type)) appData.video_types.push(type);
-      var jsonStr=JSON.stringify(appData,null,2);
-      var out=document.getElementById('addOutput');
-      out.style.display='block';out.textContent=jsonStr;
-      if(navigator.clipboard)navigator.clipboard.writeText(jsonStr).then(()=>showToast('新视频已添加，JSON已复制，请手动更新GitHub文件','success'));
-      else showToast('新视频已添加，请手动复制下方JSON更新GitHub','success');
+      return map[pageId] || '';
     }
 
-    // ===== 排期计划（与之前一致） =====
-    function renderSchedule(mc,brand){
-      var weeks=appData.weekly_tasks||[];
-      mc.innerHTML='<div class="card"><h3>'+brand+' · 周计划详情</h3><div class="week-tabs" id="weekTabBar"></div><table id="weekDetailTable"><tr><th>日期</th><th>动作</th><th>任务</th></tr></table></div>';
-      window._renderWeek=function(i){
-        document.getElementById('weekTabBar').innerHTML=weeks.map((w,j)=>'<div class="week-tab '+(j===i?'active':'')+'" onclick="window._renderWeek('+j+')">'+w.week.split(' ')[0]+'</div>').join('');
-        var cur=weeks[i];if(!cur)return;
-        document.querySelector('#weekDetailTable tbody').innerHTML=(cur.tasks||[]).map(t=>{
-          var cls='';if(t.tag==='拍摄')cls='shoot';else if(t.tag==='剪辑'||t.tag==='定稿'||t.tag==='审核')cls='edit';else if(t.tag==='发布')cls='publish';else cls='other';
-          return '<tr><td>'+t.day+'</td><td><span class="task-tag '+cls+'">'+t.action+'</span></td><td>'+t.detail+'</td></tr>';
-        }).join('');
-      };
-      window._renderWeek(0);
-    }
-
-    // ===== 品牌分析 =====
-    function renderAnalysis(mc,brand){
-      var vids=getBrandData(brand);
-      var typeCount={};vids.forEach(v=>typeCount[v.type]=(typeCount[v.type]||0)+1);
-      var treeData={name:brand,children:Object.entries(typeCount).map(([t,c])=>({name:t,children:vids.filter(v=>v.type===t).map(v=>({name:v.title}))}))};
-      var platData=PLATFORMS.map(p=>({name:p,views:platformTotal(vids,p,'views')}));
-      var maxV=Math.max(...platData.map(x=>x.views),1);
-      var cyVids=getBrandData('创艺装饰'),xkAllVids=getBrandData('喜客喜装饰');
-      var radarIndicator=PLATFORMS.map(p=>({name:p,max:Math.max(platformTotal(cyVids,p,'views'),platformTotal(xkAllVids,p,'views'))||1}));
-      var cyRadar={name:'创艺装饰',value:PLATFORMS.map(p=>platformTotal(cyVids,p,'views')),lineStyle:{color:'#3b82f6'}};
-      var xkRadar={name:'喜客喜装饰',value:PLATFORMS.map(p=>platformTotal(xkAllVids,p,'views')),lineStyle:{color:'#f59e0b'}};
-      mc.innerHTML=
-        '<div class="grid-2">'+
-          '<div class="card"><h3>'+brand+' · 类型树状图</h3><div id="treeChart" class="chart-box"></div></div>'+
-          '<div class="card"><h3>品牌对比 · 播放量雷达</h3><div id="radarChart" class="chart-box"></div></div>'+
-        '</div>'+
-        '<div class="card"><h3>各平台播放量</h3>'+platData.map(p=>'<div class="platform-bar"><span class="name">'+p.name+'</span><div class="bar"><div class="fill" style="width:'+Math.round(p.views/maxV*100)+'%"></div></div><span style="font-size:12px;">'+formatNum(p.views)+'</span></div>').join('')+'</div>';
-      setTimeout(()=>{
-        var tc=document.getElementById('treeChart');if(tc)echarts.init(tc).setOption({tooltip:{trigger:'item'},series:[{type:'tree',data:[treeData],top:'5%',left:'8%',bottom:'5%',right:'12%',symbolSize:7,orient:'LR',expandAndCollapse:true}]});
-        var rc=document.getElementById('radarChart');if(rc)echarts.init(rc).setOption({radar:{indicator:radarIndicator},series:[{type:'radar',data:[cyRadar,xkRadar]}]});
-      },150);
-    }
-
-    // ===== 数据维护（保持原样） =====
-    function renderMaintain(mc,platform){
-      var vids=appData.videos||[];
-      mc.innerHTML='<div class="card"><h3>'+platform+' · 数据维护</h3>'+vids.map((v,i)=>{var d=v.platforms?.[platform]||{};return '<div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:10px;"><b>'+v.brand+' · '+v.title+'</b><div style="display:flex;gap:10px;margin-top:6px;">播放 <input type="number" id="v'+i+'_views" value="'+(d.views||0)+'" style="width:90px;"> 点赞 <input type="number" id="v'+i+'_likes" value="'+(d.likes||0)+'" style="width:90px;"> 评论 <input type="number" id="v'+i+'_comments" value="'+(d.comments||0)+'" style="width:90px;"> 已发布 <input type="checkbox" id="v'+i+'_pub" '+(d.published?'checked':'')+'></div></div>'}).join('')+'<button class="btn btn-primary" onclick="submitJSONData(\''+platform+'\')">生成更新后的 JSON</button><div class="json-output" id="jsonOutput" style="display:none; margin-top:16px; background:#1e293b; color:#e2e8f0; padding:16px; border-radius:12px; white-space:pre-wrap; font-family:monospace; font-size:13px; max-height:400px; overflow-y:auto;"></div></div>';
-    }
-
-    function submitJSONData(platform){
-      var vids=appData.videos;
-      for(var i=0;i<vids.length;i++){
-        var platforms=vids[i].platforms||{};
-        platforms[platform]={
-          published:document.getElementById('v'+i+'_pub').checked,
-          views:parseInt(document.getElementById('v'+i+'_views').value)||0,
-          likes:parseInt(document.getElementById('v'+i+'_likes').value)||0,
-          comments:parseInt(document.getElementById('v'+i+'_comments').value)||0
-        };
-        vids[i].platforms=platforms;
+    function renderPage(pageId, mc) {
+      switch (pageId) {
+        case 'dashboard': renderDashboard(mc); break;
+        case 'brand-chuangyi-analysis': renderBrandAnalysis(mc, '创艺装饰'); break;
+        case 'brand-xikexi-analysis': renderBrandAnalysis(mc, '喜客喜装饰'); break;
+        case 'content-shoot': renderContentShoot(mc); break;
+        case 'content-edit': renderContentEdit(mc); break;
+        case 'content-copy': renderContentCopy(mc); break;
+        case 'content-idea': renderContentIdea(mc); break;
+        case 'summary-month-plan': renderSummaryMonthPlan(mc); break;
+        case 'summary-week-plan': renderSummaryWeekPlan(mc); break;
+        case 'summary-week': renderSummaryWeek(mc); break;
+        case 'summary-month': renderSummaryMonth(mc); break;
+        case 'summary-year': renderSummaryYear(mc); break;
+        case 'maintain-wechat': renderMaintain(mc, '视频号'); break;
+        case 'maintain-kuaishou': renderMaintain(mc, '快手'); break;
+        case 'maintain-douyin': renderMaintain(mc, '抖音'); break;
+        case 'maintain-bilibili': renderMaintain(mc, 'B站'); break;
+        case 'maintain-weibo': renderMaintain(mc, '微博'); break;
+        case 'fun-touch': renderFunTouch(mc); break;
+        case 'fun-pixel': renderFunPixel(mc); break;
+        case 'fun-plant': renderFunPlant(mc); break;
+        case 'fun-mood': renderFunMood(mc); break;
+        default: mc.innerHTML = '<div class="card"><h3>页面开发中...</h3></div>';
       }
-      var jsonStr=JSON.stringify(appData,null,2);
-      if(navigator.clipboard)navigator.clipboard.writeText(jsonStr).then(()=>showToast('JSON已复制，请手动替换GitHub文件','success'));
-      var out=document.getElementById('jsonOutput');out.style.display='block';out.textContent=jsonStr;
     }
+
+    // ===== 工具函数 =====
+    function formatNum(n) { if (n >= 10000) return (n / 10000).toFixed(1) + 'w'; if (n >= 1000) return (n / 1000).toFixed(1) + 'k'; return n.toString(); }
+    function getBrandData(b) { return (appData?.videos || []).filter(v => v.brand === b); }
+    function sumPlatform(vids, key) { let s = 0; vids.forEach(v => { const p = v.platforms || {}; PLATFORMS.forEach(pl => { s += (p[pl]?.[key] || 0); }); }); return s; }
+    function platformTotal(vids, plat, key) { return vids.reduce((s, v) => { const p = v.platforms || {}; return s + (p[plat]?.[key] || 0); }, 0); }
+
+    // ===== 数据大盘 =====
+    function renderDashboard(mc) {
+      const cy = getBrandData('创艺装饰'), xk = getBrandData('喜客喜装饰');
+      const cyPub = cy.filter(v => v.status === '已发布'), xkPub = xk.filter(v => v.status === '已发布');
+      const cyViews = sumPlatform(cyPub, 'views'), xkViews = sumPlatform(xkPub, 'views');
+      const totalPub = cyPub.length + xkPub.length, totalPlan = cy.length + xk.length;
+      const platData = PLATFORMS.map(p => ({ name: p, views: platformTotal(cyPub.concat(xkPub), p, 'views') }));
+      const maxView = Math.max(...platData.map(x => x.views), 1);
+      const weeks = appData.weekly_tasks || [];
+      const trends = appData.daily_trends || [];
+      const cyTrend = trends.filter(d => d.brand === '创艺装饰'), xkTrend = trends.filter(d => d.brand === '喜客喜装饰');
+      const allDates = [...new Set(cyTrend.concat(xkTrend).map(d => d.date))].sort().slice(-30);
+      const statusCount = {}; appData.videos.forEach(v => { statusCount[v.status] = (statusCount[v.status] || 0) + 1; });
+      const statusData = Object.entries(statusCount).map(([n, v]) => ({ name: n, value: v }));
+      const today = new Date();
+      const todayStr = today.getFullYear() + '-' + (today.getMonth() + 1).toString().padStart(2, '0') + '-' + today.getDate().toString().padStart(2, '0');
+      const todayVideos = appData.videos.filter(v => v.planned_date === todayStr && v.status !== '已发布');
+      const recentVideos = [...appData.videos].filter(v => v.status === '已发布').sort((a, b) => b.planned_date.localeCompare(a.planned_date)).slice(0, 5);
+      // 树状图数据
+      const treeData = [
+        { name: '创艺装饰', children: buildTypeTree('创艺装饰') },
+        { name: '喜客喜装饰', children: buildTypeTree('喜客喜装饰') }
+      ];
+
+      mc.innerHTML =
+        '<div class="kpi-row">' +
+          '<div class="kpi-card brand-card"><div class="label">🏠 创艺装饰 · 总播放</div><div class="value">' + formatNum(cyViews) + '</div><div class="sub">已发布 ' + cyPub.length + ' 条</div></div>' +
+          '<div class="kpi-card brand-card orange"><div class="label">🏡 喜客喜装饰 · 总播放</div><div class="value">' + formatNum(xkViews) + '</div><div class="sub">已发布 ' + xkPub.length + ' 条</div></div>' +
+          '<div class="kpi-card"><div class="label">📹 本月发布进度</div><div class="value">' + totalPub + '<span style="font-size:16px;color:#64748b;"> / ' + totalPlan + '</span></div><div class="sub">完成率 ' + (totalPlan > 0 ? Math.round(totalPub / totalPlan * 100) : 0) + '%</div></div>' +
+          '<div class="kpi-card"><div class="label">📋 今日待处理</div><div class="value">' + todayVideos.length + '</div><div class="sub">条视频待拍摄/剪辑/发布</div></div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div class="card"><h3>计划大盘（树状图）</h3><div id="dashboardTree" class="chart-box"></div></div>' +
+          '<div class="card"><h3>近30天播放趋势</h3><div id="trendChart" class="chart-box"></div></div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div class="card"><h3>视频状态分布</h3><div id="statusChart" class="chart-box"></div></div>' +
+          '<div class="card"><h3>各平台播放量对比</h3>' + platData.map(p => '<div class="platform-bar"><span class="name">' + p.name + '</span><div class="bar"><div class="fill" style="width:' + Math.round(p.views / maxView * 100) + '%"></div></div><span style="font-size:12px;color:#334155;">' + formatNum(p.views) + '</span></div>').join('') + '</div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div class="card"><h3>每周执行汇总</h3><div id="weekBarChart" class="chart-box"></div></div>' +
+          '<div class="card"><h3>最近发布视频</h3><table><tr><th>品牌</th><th>标题</th><th>日期</th><th>总播放</th></tr>' + recentVideos.map(v => '<tr><td>' + v.brand + '</td><td>' + v.title + '</td><td>' + v.planned_date + '</td><td>' + formatNum(sumPlatform([v], 'views')) + '</td></tr>').join('') + '</table></div>' +
+        '</div>';
+      setTimeout(() => {
+        const treeDom = document.getElementById('dashboardTree');
+        if (treeDom) echarts.init(treeDom).setOption({ tooltip: { trigger: 'item' }, series: [{ type: 'tree', data: treeData, top: '5%', left: '10%', bottom: '5%', right: '15%', symbolSize: 7, orient: 'LR', label: { position: 'right', verticalAlign: 'middle', align: 'left', fontSize: 12 }, leaves: { label: { position: 'right', verticalAlign: 'middle', align: 'left' } }, expandAndCollapse: true }] });
+        const tc = document.getElementById('trendChart'); if (tc) echarts.init(tc).setOption({ tooltip: { trigger: 'axis' }, legend: { data: ['创艺装饰', '喜客喜装饰'] }, xAxis: { type: 'category', data: allDates, axisLabel: { rotate: 30, fontSize: 10 } }, yAxis: { type: 'value' }, series: [{ name: '创艺装饰', type: 'line', data: allDates.map(d => (cyTrend.find(t => t.date === d) || {}).views), smooth: true, color: '#3b82f6' }, { name: '喜客喜装饰', type: 'line', data: allDates.map(d => (xkTrend.find(t => t.date === d) || {}).views), smooth: true, color: '#f59e0b' }] });
+        const sc = document.getElementById('statusChart'); if (sc) echarts.init(sc).setOption({ tooltip: { trigger: 'item' }, series: [{ type: 'pie', radius: ['50%', '75%'], data: statusData }] });
+        const wc = document.getElementById('weekBarChart'); if (wc) echarts.init(wc).setOption({ tooltip: { trigger: 'axis' }, xAxis: { type: 'category', data: weeks.map(w => w.week), axisLabel: { rotate: 15, fontSize: 10 } }, yAxis: { type: 'value' }, series: [{ name: '出片', type: 'bar', data: weeks.map(w => w.output), color: '#3b82f6' }, { name: '拍摄', type: 'bar', data: weeks.map(w => w.shoot), color: '#f59e0b' }] });
+      }, 150);
+    }
+
+    function buildTypeTree(brand) {
+      const vids = getBrandData(brand);
+      const typeMap = {};
+      vids.forEach(v => { if (!typeMap[v.type]) typeMap[v.type] = []; typeMap[v.type].push(v.title); });
+      return Object.entries(typeMap).map(([type, titles]) => ({ name: type, children: titles.map(t => ({ name: t })) }));
+    }
+
+    // ===== 品牌数据分析（通用） =====
+    function renderBrandAnalysis(mc, brand) {
+      const vids = getBrandData(brand);
+      const pub = vids.filter(v => v.status === '已发布');
+      const totalViews = sumPlatform(pub, 'views');
+      const totalLikes = sumPlatform(pub, 'likes');
+      const totalComments = sumPlatform(pub, 'comments');
+      const platData = PLATFORMS.map(p => ({ name: p, views: platformTotal(vids, p, 'views') }));
+      const maxV = Math.max(...platData.map(x => x.views), 1);
+      const weeks = appData.weekly_tasks || [];
+      const trends = appData.daily_trends || [];
+      const brandTrend = trends.filter(d => d.brand === brand);
+      const allDates = [...new Set(brandTrend.map(d => d.date))].sort().slice(-30);
+      const typeCount = {}; vids.forEach(v => { typeCount[v.type] = (typeCount[v.type] || 0) + 1; });
+      const typeData = Object.entries(typeCount).map(([n, v]) => ({ name: n, value: v }));
+      const top5 = [...pub].sort((a, b) => sumPlatform([b], 'views') - sumPlatform([a], 'views')).slice(0, 5);
+      const today = new Date();
+      const todayStr = today.getFullYear() + '-' + (today.getMonth() + 1).toString().padStart(2, '0') + '-' + today.getDate().toString().padStart(2, '0');
+      const overdue = vids.filter(v => v.planned_date < todayStr && v.status !== '已发布');
+
+      mc.innerHTML =
+        '<div class="kpi-row">' +
+          '<div class="kpi-card"><div class="label">总播放</div><div class="value">' + formatNum(totalViews) + '</div></div>' +
+          '<div class="kpi-card"><div class="label">总点赞</div><div class="value">' + formatNum(totalLikes) + '</div></div>' +
+          '<div class="kpi-card"><div class="label">总评论</div><div class="value">' + formatNum(totalComments) + '</div></div>' +
+          '<div class="kpi-card"><div class="label">发布视频数</div><div class="value">' + pub.length + '</div></div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div class="card"><h3>近30天播放趋势</h3><div id="trendChart" class="chart-box"></div></div>' +
+          '<div class="card"><h3>视频类型分布</h3><div id="typeChart" class="chart-box"></div></div>' +
+        '</div>' +
+        '<div class="card"><h3>各平台播放量对比</h3>' + platData.map(p => '<div class="platform-bar"><span class="name">' + p.name + '</span><div class="bar"><div class="fill" style="width:' + Math.round(p.views / maxV * 100) + '%"></div></div><span style="font-size:12px;color:#334155;">' + formatNum(p.views) + '</span></div>').join('') + '</div>' +
+        '<div class="card"><h3>月度计划表</h3><table><tr><th>序号</th><th>标题</th><th>类型</th><th>日期</th><th>时间</th><th>状态</th></tr>' + vids.map((v, i) => '<tr><td>' + (i + 1) + '</td><td>' + v.title + '</td><td>' + v.type + '</td><td>' + v.planned_date + '</td><td>' + v.planned_time + '</td><td><span class="status-tag ' + (v.status === '已发布' ? 'published' : v.status === '剪辑中' ? 'editing' : v.status === '拍摄中' ? 'shooting' : 'pending') + '">' + v.status + '</span></td></tr>').join('') + '</table><button class="btn btn-primary" onclick="switchPage(\'summary-month-plan\')">添加视频</button></div>' +
+        '<div class="card"><h3>周计划执行</h3><div class="week-tabs" id="weekTabBar"></div><table id="weekDetailTable"><tr><th>日期</th><th>动作</th><th>任务</th></tr></table></div>' +
+        (overdue.length > 0 ? '<div class="card" style="margin-top:20px;"><h3>⚠️ 延期提醒</h3>' + overdue.map(v => '<p style="color:#ef4444;">🔴 ' + v.title + ' · 计划 ' + v.planned_date + ' · 当前：' + v.status + '</p>').join('') + '</div>' : '') +
+        '<div class="card"><h3>TOP5 视频排行</h3><table><tr><th>排名</th><th>标题</th><th>总播放</th></tr>' + top5.map((v, i) => '<tr><td>#' + (i + 1) + '</td><td>' + v.title + '</td><td>' + formatNum(sumPlatform([v], 'views')) + '</td></tr>').join('') + '</table></div>';
+      setTimeout(() => {
+        const tc = document.getElementById('trendChart'); if (tc) echarts.init(tc).setOption({ tooltip: { trigger: 'axis' }, xAxis: { type: 'category', data: allDates, axisLabel: { rotate: 30, fontSize: 10 } }, yAxis: { type: 'value' }, series: [{ type: 'line', data: allDates.map(d => (brandTrend.find(t => t.date === d) || {}).views), smooth: true, color: '#3b82f6' }] });
+        const tyc = document.getElementById('typeChart'); if (tyc) echarts.init(tyc).setOption({ tooltip: { trigger: 'item' }, series: [{ type: 'pie', radius: ['50%', '75%'], data: typeData }] });
+        const weeks = appData.weekly_tasks || [];
+        window._renderWeek = function(i) {
+          document.getElementById('weekTabBar').innerHTML = weeks.map((w, j) => '<div class="week-tab ' + (j === i ? 'active' : '') + '" onclick="window._renderWeek(' + j + ')">' + w.week.split(' ')[0] + '</div>').join('');
+          const cur = weeks[i]; if (!cur) return;
+          document.querySelector('#weekDetailTable tbody').innerHTML = (cur.tasks || []).map(t => {
+            let cls = ''; if (t.tag === '拍摄') cls = 'shoot'; else if (t.tag === '剪辑' || t.tag === '定稿' || t.tag === '审核') cls = 'edit'; else if (t.tag === '发布') cls = 'publish'; else cls = 'other';
+            return '<tr><td>' + t.day + '</td><td><span class="task-tag ' + cls + '">' + t.action + '</span></td><td>' + t.detail + '</td></tr>';
+          }).join('');
+        };
+        window._renderWeek(0);
+      }, 150);
+    }
+
+    // ===== 内容生产（占位，以后细化） =====
+    function renderContentShoot(mc) { mc.innerHTML = '<div class="card"><h3>拍摄任务</h3><p>功能开发中...</p></div>'; }
+    function renderContentEdit(mc) { mc.innerHTML = '<div class="card"><h3>剪辑任务</h3><p>功能开发中...</p></div>'; }
+    function renderContentCopy(mc) { mc.innerHTML = '<div class="card"><h3>文案任务</h3><p>功能开发中...</p></div>'; }
+    function renderContentIdea(mc) { mc.innerHTML = '<div class="card"><h3>灵感/选题库</h3><p>功能开发中...</p></div>'; }
+
+    // ===== 工作总结（占位） =====
+    function renderSummaryMonthPlan(mc) { mc.innerHTML = '<div class="card"><h3>月度视频规划</h3><p>此处展示月度计划总览...</p></div>'; }
+    function renderSummaryWeekPlan(mc) { mc.innerHTML = '<div class="card"><h3>周执行计划</h3><p>此处展示本周每日任务...</p></div>'; }
+    function renderSummaryWeek(mc) { mc.innerHTML = '<div class="card"><h3>周总结</h3><p>自动汇总本周数据 + 可编辑文字...</p></div>'; }
+    function renderSummaryMonth(mc) { mc.innerHTML = '<div class="card"><h3>月总结</h3><p>自动汇总本月数据...</p></div>'; }
+    function renderSummaryYear(mc) { mc.innerHTML = '<div class="card"><h3>年总结</h3><p>年度数据趋势...</p></div>'; }
+
+    // ===== 数据维护（通用） =====
+    function renderMaintain(mc, platform) {
+      const vids = appData.videos || [];
+      mc.innerHTML = '<div class="card"><h3>' + platform + ' · 数据维护</h3>' +
+        vids.map((v, i) => { const d = v.platforms?.[platform] || {}; return '<div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:10px;"><b>' + v.brand + ' · ' + v.title + '</b><div style="display:flex;gap:10px;margin-top:6px;">播放 <input type="number" id="v' + i + '_views" value="' + (d.views || 0) + '" style="width:90px;"> 点赞 <input type="number" id="v' + i + '_likes" value="' + (d.likes || 0) + '" style="width:90px;"> 评论 <input type="number" id="v' + i + '_comments" value="' + (d.comments || 0) + '" style="width:90px;"> 已发布 <input type="checkbox" id="v' + i + '_pub" ' + (d.published ? 'checked' : '') + '></div></div>'; }).join('') +
+        '<button class="btn btn-primary" onclick="submitJSONData(\'' + platform + '\')">生成更新后的 JSON</button>' +
+        '<div class="json-output" id="jsonOutput" style="display:none; margin-top:16px;"></div></div>';
+    }
+
+    function submitJSONData(platform) {
+      const vids = appData.videos;
+      for (let i = 0; i < vids.length; i++) {
+        const platforms = vids[i].platforms || {};
+        platforms[platform] = {
+          published: document.getElementById('v' + i + '_pub').checked,
+          views: parseInt(document.getElementById('v' + i + '_views').value) || 0,
+          likes: parseInt(document.getElementById('v' + i + '_likes').value) || 0,
+          comments: parseInt(document.getElementById('v' + i + '_comments').value) || 0
+        };
+        vids[i].platforms = platforms;
+      }
+      const jsonStr = JSON.stringify(appData, null, 2);
+      if (navigator.clipboard) navigator.clipboard.writeText(jsonStr).then(() => showToast('JSON已复制，请手动替换GitHub文件', 'success'));
+      const out = document.getElementById('jsonOutput'); out.style.display = 'block'; out.textContent = jsonStr;
+    }
+
+    // ===== 放松小站（趣味功能） =====
+    function renderFunTouch(mc) { mc.innerHTML = '<div class="card"><h3>今日摸鱼</h3><p>🐟 每日冷笑话：代码写完了吗？没有，但我学会了摸鱼。</p></div>'; }
+    function renderFunPixel(mc) { mc.innerHTML = '<div class="card"><h3>像素画板</h3><p>一个简易的像素网格，稍后实现...</p></div>'; }
+    function renderFunPlant(mc) { mc.innerHTML = '<div class="card"><h3>虚拟盆栽</h3><p>🌱 你的小盆栽正在生长...</p></div>'; }
+    function renderFunMood(mc) { mc.innerHTML = '<div class="card"><h3>心情日记</h3><p>😊 今天心情：开心</p></div>'; }
+
+    // ===== 初始化 =====
+    renderSidebar();
   </script>
 </body>
 </html>
