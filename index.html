@@ -158,16 +158,15 @@
 
   <!-- 主逻辑 -->
   <script>
-    // Supabase 初始化
-    const SUPABASE_URL = 'https://olkcpvcuvrfsavtarihk.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sa2NwdmN1dnJmc2F2dGFyaWhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODI5NzcsImV4cCI6MjA5ODU1ODk3N30.-1pisQuol583xkjwSXyxW5olIRl_MTMYQaByJr3fwYg';
+    // Supabase 初始化（新密钥匹配新URL）
+    const SUPABASE_URL = 'https://rlejheshzwzfijmkongt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZWpoZXNoend6ZmlqbWtvbmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1Nzk5OTAsImV4cCI6MjA5ODE1NTk5MH0.RkDAX8aBg6CV7HweyZqhy2oLcArlFWTg3ASntmALv4M';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
     let appData = { videos: [], brands: [], platforms: [], videoTypes: [], weeklyTasks: [], platformData: [] };
     const PLATFORMS = ['视频号','快手','抖音','B站','微博'];
 
-    // ===== 数据加载 =====
     async function loadAllData() {
       try {
         const [vRes, bRes, pRes, tRes, wRes, pdRes] = await Promise.all([
@@ -202,7 +201,6 @@
       el._t = setTimeout(() => { el.className = 'toast'; }, 2500);
     }
 
-    // ===== 登录 =====
     async function login() {
       const u = document.getElementById('usernameInput').value.trim();
       const pw = document.getElementById('passwordInput').value.trim();
@@ -242,7 +240,6 @@
       document.getElementById('particleCanvas').style.display = 'block';
     }
 
-    // ===== 修改密码 =====
     async function changePassword() {
       const o = document.getElementById('oldPassword').value.trim();
       const n = document.getElementById('newPassword').value.trim();
@@ -265,7 +262,6 @@
         document.getElementById('userDropdown').classList.remove('show');
     });
 
-    // ===== 自动登录 =====
     async function autoLogin() {
       const savedUser = sessionStorage.getItem('loggedInUser');
       if (savedUser) {
@@ -274,7 +270,6 @@
       }
     }
 
-    // ===== 侧边栏 =====
     function renderSidebar() {
       document.getElementById('sidebar').innerHTML = `
         <div class="sidebar-logo"><span></span>数据中心</div>
@@ -332,7 +327,6 @@
       if (sub) { sub.classList.toggle('show'); if (arrow) arrow.classList.toggle('open'); }
     }
 
-    // ===== 页面切换 =====
     function switchPage(pageId) {
       document.querySelectorAll('.nav-item, .sub-item').forEach(el => el.classList.remove('active'));
       const activeEl = document.querySelector(`[data-page="${pageId}"]`);
@@ -373,12 +367,10 @@
       } else { mc.innerHTML = '<div class="card"><h3>页面开发中...</h3></div>'; }
     }
 
-    // ===== 工具函数 =====
     function formatNum(n) { if (n >= 10000) return (n / 10000).toFixed(1) + 'w'; if (n >= 1000) return (n / 1000).toFixed(1) + 'k'; return n.toString(); }
     function getVideoViews(video) { return (appData.platformData || []).filter(pd => pd.video_id === video.id).reduce((s, pd) => s + (pd.views || 0), 0); }
     function getBrandVideos(brandName) { const brand = (appData.brands || []).find(b => b.name === brandName); return (appData.videos || []).filter(v => v.brand_id === brand?.id); }
 
-    // ===== 数据大盘 =====
     function renderDashboard(mc) {
       const cy = getBrandVideos('创艺装饰'), xk = getBrandVideos('喜客喜装饰');
       const cyPub = cy.filter(v => v.status === '已发布'), xkPub = xk.filter(v => v.status === '已发布');
@@ -390,7 +382,6 @@
       const todayStr = today.getFullYear() + '-' + (today.getMonth() + 1).toString().padStart(2, '0') + '-' + today.getDate().toString().padStart(2, '0');
       const todayVideos = appData.videos.filter(v => v.planned_date === todayStr && v.status !== '已发布');
       const recentVideos = [...appData.videos].filter(v => v.status === '已发布').sort((a, b) => b.planned_date.localeCompare(a.planned_date)).slice(0, 5);
-
       mc.innerHTML = `
         <div class="kpi-row">
           <div class="kpi-card brand-card"><div class="label">🏠 创艺装饰 · 总播放</div><div class="value">${formatNum(cyViews)}</div><div class="sub">已发布 ${cyPub.length} 条</div></div>
@@ -408,7 +399,6 @@
       }, 150);
     }
 
-    // ===== 品牌数据页面 =====
     function renderBrandPage(mc, brand) {
       const vids = getBrandVideos(brand);
       const pub = vids.filter(v => v.status === '已发布');
@@ -421,7 +411,6 @@
         <div class="card"><h3>月度计划表</h3><table><tr><th>标题</th><th>类型</th><th>日期</th><th>时间</th><th>状态</th></tr>${vids.map(v => '<tr><td>' + v.title + '</td><td>' + (appData.videoTypes.find(t => t.id === v.type_id)?.name || '') + '</td><td>' + v.planned_date + '</td><td>' + v.planned_time + '</td><td><span class="status-tag ' + (v.status === '已发布' ? 'published' : v.status === '剪辑中' ? 'editing' : v.status === '拍摄中' ? 'shooting' : 'pending') + '">' + v.status + '</span></td></tr>').join('')}</table></div>`;
     }
 
-    // ===== 数据维护 =====
     function renderMaintain(mc, platform) {
       const platformObj = (appData.platforms || []).find(p => p.name === platform);
       const pid = platformObj?.id;
@@ -458,7 +447,6 @@
       showToast('✅ 数据已保存到数据库', 'success');
     }
 
-    // ===== 启动 =====
     autoLogin();
   </script>
 </body>
