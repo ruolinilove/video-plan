@@ -143,7 +143,6 @@
     </div>
   </div>
 
-  <!-- 粒子特效 -->
   <script>
     (function(){
       var c=document.getElementById('particleCanvas'),ctx=c.getContext('2d'),p=[],w,h,mx=-500,my=-500;
@@ -156,15 +155,11 @@
     addEventListener('mousemove',function(e){var b=document.getElementById('loginBox');if(!b||b.offsetParent===null)return;var cx=innerWidth/2,cy=innerHeight/2;b.style.transform='translate('+((e.clientX-cx)/cx*4)+'px,'+((e.clientY-cy)/cy*4)+'px)'});
   </script>
 
-  <!-- 主逻辑 -->
   <script>
-    // Supabase 初始化（使用正确的项目 URL 和密钥）
-    const SUPABASE_URL = 'https://rlejheshzwzfijmkongt.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZWpoZXNoend6ZmlqbWtvbmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1Nzk5OTAsImV4cCI6MjA5ODE1NTk5MH0.RkDAX8aBg6CV7HweyZqhy2oLcArlFWTg3ASntmALv4M';
+    const SUPABASE_URL = 'https://oiiejtymrfzqdmkkhzcc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9paWVqdHltcmZ6cWRta2toemNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NjE1NjksImV4cCI6MjA5OTAzNzU2OX0.lDCK8-24m2AXcvKPMtNP4Fxg_sQ0oVwKeNbFbz0pUqQ';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let currentUser = null;
-    let appData = { videos: [], brands: [], platforms: [], videoTypes: [], weeklyTasks: [], platformData: [] };
+    let currentUser = null, appData = { videos: [], brands: [], platforms: [], videoTypes: [], weeklyTasks: [], platformData: [] };
     const PLATFORMS = ['视频号','快手','抖音','B站','微博'];
 
     async function loadAllData() {
@@ -250,7 +245,7 @@
       if (n !== c) { e.textContent = '两次不一致'; return; }
       await supabaseClient.from('app_users').update({ password: n }).eq('id', currentUser.id);
       currentUser.password = n;
-      showToast('密码修改成功（已保存到数据库）', 'success');
+      showToast('密码修改成功', 'success');
       closePasswordModal();
     }
 
