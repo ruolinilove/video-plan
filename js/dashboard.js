@@ -132,6 +132,8 @@
       const key = pageId.replace('maintain-', '');
       const platform = PLATFORM_PAGE_MAP[key] || key;
       renderMaintainPage(mc, platform);
+        } else if (pageId === 'content-add') {
+      renderContentAdd(mc);
     } else {
       mc.innerHTML = '<div class="card"><h3>页面开发中...</h3></div>';
     }
