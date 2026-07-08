@@ -158,7 +158,7 @@
 
   <!-- 主逻辑 -->
   <script>
-    // Supabase 初始化（新密钥匹配新URL）
+    // Supabase 初始化（使用正确的项目 URL 和密钥）
     const SUPABASE_URL = 'https://rlejheshzwzfijmkongt.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsZWpoZXNoend6ZmlqbWtvbmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1Nzk5OTAsImV4cCI6MjA5ODE1NTk5MH0.RkDAX8aBg6CV7HweyZqhy2oLcArlFWTg3ASntmALv4M';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
