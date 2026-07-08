@@ -1,84 +1,254 @@
-
 // =================================
-// 数据图表
-// charts.js
+// 后台系统核心
+// dashboard.js
 // =================================
 
 
 
-// 创建饼图
+// ===============================
+// 左侧菜单
+// ===============================
 
 
-function createStatusChart(data){
+function renderSidebar(){
 
 
-const dom = 
+const sidebar =
 document.getElementById(
-"statusChart"
+"sidebar"
 );
 
 
 
-if(!dom)return;
+sidebar.innerHTML = `
 
 
+<div class="sidebar-logo">
 
-let chart =
-echarts.init(dom);
+<span></span>
 
+数据中心
 
-
-
-chart.setOption({
-
-
-tooltip:{
-
-
-trigger:"item"
-
-
-},
-
-
-
-legend:{
-
-
-bottom:10
-
-
-},
+</div>
 
 
 
 
-series:[{
+<div class="nav-item active"
+onclick="switchPage('dashboard')">
 
 
-name:"视频状态",
+📊 数据大盘
 
 
-type:"pie",
-
-
-radius:[
-"50%",
-"75%"
-],
+</div>
 
 
 
-data:data,
+
+<div class="nav-group">
+
+
+<div class="nav-item"
+onclick="toggleNav('brandSub')">
+
+
+📊 品牌数据
+
+</div>
+
+
+<div id="brandSub"
+class="sub-nav">
+
+
+<div class="sub-item"
+onclick="switchPage('brand-chuangyi')">
+
+创艺装饰
+
+</div>
 
 
 
-label:{
+<div class="sub-item"
+onclick="switchPage('brand-xikexi')">
+
+喜客喜装饰
+
+</div>
 
 
-show:true,
+</div>
 
-formatter:"{b} {c}条"
+
+</div>
+
+
+
+
+
+<div class="nav-group">
+
+
+<div class="nav-item"
+onclick="toggleNav('contentSub')">
+
+
+🎬 内容生产
+
+
+</div>
+
+
+
+<div id="contentSub"
+class="sub-nav">
+
+
+<div class="sub-item">
+
+拍摄任务
+
+</div>
+
+
+
+<div class="sub-item">
+
+剪辑任务
+
+</div>
+
+
+
+<div class="sub-item">
+
+文案任务
+
+</div>
+
+
+
+<div class="sub-item">
+
+灵感选题库
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="nav-group">
+
+
+<div class="nav-item"
+onclick="toggleNav('summarySub')">
+
+
+📝 工作总结
+
+
+</div>
+
+
+<div id="summarySub"
+class="sub-nav">
+
+
+<div class="sub-item">
+
+月度视频规划
+
+</div>
+
+
+<div class="sub-item">
+
+周执行计划
+
+</div>
+
+
+<div class="sub-item">
+
+周总结
+
+</div>
+
+
+
+<div class="sub-item">
+
+月总结
+
+</div>
+
+
+
+<div class="sub-item">
+
+年总结
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="nav-group">
+
+
+<div class="nav-item"
+onclick="toggleNav('maintainSub')">
+
+
+🔧 数据维护
+
+
+</div>
+
+
+
+<div id="maintainSub"
+class="sub-nav">
+
+
+<div class="sub-item"
+onclick="switchPage('maintain')">
+
+平台数据
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+`;
+
 
 
 }
@@ -86,28 +256,27 @@ formatter:"{b} {c}条"
 
 
 
-}]
 
 
 
-});
+// 菜单展开
 
 
+function toggleNav(id){
 
 
+const el =
+document.getElementById(id);
 
-window.addEventListener(
-"resize",
-()=>{
 
-chart.resize();
+if(!el)return;
 
-}
 
+el.classList.toggle(
+"show"
 );
 
 
-
 }
 
 
@@ -115,95 +284,81 @@ chart.resize();
 
 
 
-// 播放趋势图
 
 
-function createViewChart(data){
+// ===============================
+// 页面切换
+// ===============================
+
+
+function switchPage(page){
 
 
 
-const dom =
+const content =
 document.getElementById(
-"viewChart"
+"pageContent"
 );
 
 
 
-if(!dom)return;
+const breadcrumb =
+document.getElementById(
+"breadcrumb"
+);
 
 
 
-const chart =
-echarts.init(dom);
+
+if(page==="dashboard"){
+
+
+breadcrumb.innerHTML=
+"📊 数据大盘";
+
+
+renderDashboard(content);
+
+
+}
 
 
 
-chart.setOption({
-
-
-tooltip:{
-
-
-trigger:"axis"
-
-
-},
 
 
 
-xAxis:{
+else if(page==="brand-chuangyi"){
 
 
-type:"category",
+breadcrumb.innerHTML=
+"📊 品牌数据 / 创艺装饰";
 
 
-data:data.map(
-i=>i.date
-)
+renderBrandPage(
+content,
+"创艺装饰"
+);
 
 
-},
-
-
-
-yAxis:{
-
-
-type:"value"
-
-
-},
+}
 
 
 
-series:[{
-
-
-type:"line",
-
-
-smooth:true,
-
-
-data:data.map(
-i=>i.views
-),
-
-
-areaStyle:{}
-
-
-}]
 
 
 
-});
+else if(page==="brand-xikexi"){
 
 
 
-window.addEventListener(
-"resize",
-()=>chart.resize()
+breadcrumb.innerHTML=
+"📊 品牌数据 / 喜客喜装饰";
+
+
+
+renderBrandPage(
+content,
+"喜客喜装饰"
 );
 
 
@@ -212,3 +367,24 @@ window.addEventListener(
 
 
 
+
+else{
+
+
+content.innerHTML=`
+
+<div class="card">
+
+<h3>
+页面开发中...
+</h3>
+
+</div>
+
+`;
+
+}
+
+
+
+}
