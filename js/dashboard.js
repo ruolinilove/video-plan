@@ -304,5 +304,83 @@
     html += `<button class="btn btn-primary" onclick="window.submitPlatformData(${pid})">提交数据</button></div>`;
     mc.innerHTML = html;
   }
+// ==================== 添加视频页面 ====================
+function renderContentAdd(mc) {
+  const brands = window.appData.brands || [];
+  const types = window.appData.videoTypes || [];
+  
+  const brandOptions = brands.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  const typeOptions = types.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  
+  // 默认日期为明天
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultDate = tomorrow.toISOString().split('T')[0];
+  
+  mc.innerHTML = `
+    <div class="card">
+      <h3>添加新视频</h3>
+      <div class="form-group">
+        <label>品牌</label>
+        <select id="addBrand">${brandOptions}</select>
+      </div>
+      <div class="form-group">
+        <label>视频标题</label>
+        <input type="text" id="addTitle" placeholder="输入视频标题">
+      </div>
+      <div class="form-group">
+        <label>视频类型</label>
+        <select id="addType">${typeOptions}</select>
+      </div>
+      <div class="form-group">
+        <label>计划日期</label>
+        <input type="date" id="addDate" value="${defaultDate}">
+      </div>
+      <div class="form-group">
+        <label>计划时间</label>
+        <input type="time" id="addTime" value="10:00">
+      </div>
+      <button class="btn btn-primary" onclick="window.submitNewVideo()">提交</button>
+      <div id="addResult" style="margin-top:12px;"></div>
+    </div>
+  `;
+}
 
+// 提交新视频
+window.submitNewVideo = async function() {
+  const brandId = parseInt(document.getElementById('addBrand').value);
+  const title = document.getElementById('addTitle').value.trim();
+  const typeId = parseInt(document.getElementById('addType').value);
+  const date = document.getElementById('addDate').value;
+  const time = document.getElementById('addTime').value;
+  
+  if (!title) {
+    window.showToast('请输入视频标题', 'error');
+    return;
+  }
+  
+  const videoData = {
+    brand_id: brandId,
+    title: title,
+    type_id: typeId,
+    planned_date: date,
+    planned_time: time,
+    status: '待拍摄'
+  };
+  
+  const result = await window.addVideo(videoData);
+  if (result) {
+    // 清空表单
+    document.getElementById('addTitle').value = '';
+    document.getElementById('addDate').value = '';
+    document.getElementById('addTime').value = '10:00';
+    // 跳转到该品牌的计划表
+    const brand = window.appData.brands.find(b => b.id === brandId);
+    if (brand && brand.name === '喜客喜装饰') {
+      window.switchPage('brand-xikexi');
+    } else {
+      window.switchPage('brand-chuangyi');
+    }
+  }
+};
 })();
