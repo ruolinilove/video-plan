@@ -76,5 +76,20 @@
     await window.loadAllData();
     if (window.showToast) window.showToast('✅ 数据已保存到数据库', 'success');
   };
-  
+  // 添加新视频到数据库
+window.addVideo = async function(videoData) {
+  const { data, error } = await supabaseClient
+    .from('videos')
+    .insert([videoData])
+    .select();
+  if (error) {
+    console.error('添加视频失败', error);
+    if (window.showToast) window.showToast('添加失败：' + error.message, 'error');
+    return null;
+  }
+  // 重新加载所有数据以更新界面
+  await window.loadAllData();
+  if (window.showToast) window.showToast('视频添加成功！', 'success');
+  return data;
+};
 })();
